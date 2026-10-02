@@ -9,3 +9,5 @@ Thumbs.db
 .vscode/
 .idea/
 coverage/
+__pycache__/
+*.pyc
