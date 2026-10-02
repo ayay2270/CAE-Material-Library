@@ -129,6 +129,13 @@ export const ResetIcon = (p: P) => (
   </Icon>
 );
 
+export const ColumnsIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="2" y="2.5" width="12" height="11" />
+    <path d="M6 2.5v11M10 2.5v11" />
+  </Icon>
+);
+
 export function SortArrows({ dir }: { dir: 'asc' | 'desc' | null }) {
   return (
     <svg width="8" height="11" viewBox="0 0 8 11" aria-hidden="true" className="sort-arrows">

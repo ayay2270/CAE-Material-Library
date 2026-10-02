@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { CATEGORIES } from '../types';
+import { CATEGORIES, CATEGORY_LABEL } from '../types';
 import type { Category, Material, MaterialInput } from '../types';
-import { PROPS, PROP_COUNT } from '../lib/props';
+import { PROPS } from '../lib/props';
 import { Modal } from './Modal';
 
 interface Props {
@@ -36,23 +36,21 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     const n = name.trim();
-    if (!n) e.name = 'Name is required.';
+    if (!n) e.name = '請輸入材料名稱。';
     else if (existing.some((m) => m.id !== initial?.id && m.name.toLowerCase() === n.toLowerCase()))
-      e.name = 'A material with this name already exists.';
+      e.name = '已有相同名稱的材料。';
     for (const p of PROPS) {
       const raw = vals[p.key].trim();
       if (raw === '') continue;
       const num = Number(raw);
       const r = RULES[p.key];
-      if (!Number.isFinite(num)) e[p.key] = 'Enter a number (e.g. 2.82E-9).';
-      else if (r?.positive && num <= 0) e[p.key] = 'Must be greater than 0.';
-      else if (r?.min !== undefined && num < r.min) e[p.key] = `Must be ≥ ${r.min}.`;
-      else if (r?.max !== undefined && num > r.max) e[p.key] = `Must be ≤ ${r.max}.`;
+      if (!Number.isFinite(num)) e[p.key] = '請輸入數字（例如 2.82E-9）。';
+      else if (r?.positive && num <= 0) e[p.key] = '必須大於 0。';
+      else if (r?.min !== undefined && num < r.min) e[p.key] = `必須 ≥ ${r.min}。`;
+      else if (r?.max !== undefined && num > r.max) e[p.key] = `必須 ≤ ${r.max}。`;
     }
     return e;
   }, [name, vals, existing, initial]);
-
-  const filled = PROPS.filter((p) => vals[p.key].trim() !== '' && !errors[p.key]).length;
 
   const submit = () => {
     setSubmitted(true);
@@ -83,17 +81,14 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
 
   return (
     <Modal
-      title={initial ? `Edit ${initial.name}` : 'Add Material'}
+      title={initial ? `編輯 ${initial.name}` : '新增材料'}
       width={600}
       onClose={onClose}
       footer={
         <>
-          <span className="form-count">
-            {filled}/{PROP_COUNT} properties filled
-          </span>
           <span className="toolbar-spacer" />
-          <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn primary" onClick={submit}>{initial ? 'Save changes' : 'Add material'}</button>
+          <button className="btn" onClick={onClose}>取消</button>
+          <button className="btn primary" onClick={submit}>{initial ? '儲存變更' : '新增'}</button>
         </>
       }
     >
@@ -106,27 +101,27 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
       >
         <div className="form-row two">
           <label className={err('name') ? 'invalid' : ''}>
-            <span>Material name *</span>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. SUS304 1/2H" />
+            <span>Material Name *</span>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="例如 SUS304 1/2H" />
             {err('name') && <em>{errors.name}</em>}
           </label>
           <label>
             <span>Category</span>
             <select value={category} onChange={(e) => setCategory(e.target.value as Category)}>
               {CATEGORIES.map((c) => (
-                <option key={c}>{c}</option>
+                <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
               ))}
             </select>
           </label>
         </div>
 
         <fieldset>
-          <legend>Properties <small>(leave blank when unknown — it is stored as “—”, never as 0)</small></legend>
+          <legend>性質 <small>（未知請留空，將顯示為「—」，不會存成 0）</small></legend>
           <div className="form-grid">
             {PROPS.map((p) => (
               <label key={p.key} className={err(p.key) ? 'invalid' : ''}>
                 <span>
-                  <b className="sym">{p.symbol}</b> {p.label}
+                  {p.label}
                   <small> {p.unit !== '—' ? `(${p.unit})` : ''}{p.optional ? ' · optional' : ''}</small>
                 </span>
                 <input
@@ -143,13 +138,13 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
 
         <label>
           <span>Source</span>
-          <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. Supplier datasheet, Web, Provided by …" />
+          <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="例如：供應商資料表、網路、提供者姓名" />
         </label>
         <label>
-          <span>Notes</span>
-          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Test condition, temper, reference link…" />
+          <span>備註</span>
+          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="試驗條件、熱處理狀態、參考連結…" />
         </label>
-        <p className="form-hint">Values are stored in the mm–t–N–s unit system (density t/mm³, stress MPa).</p>
+        <p className="form-hint">數值以 mm–t–N–s 單位制儲存（密度 t/mm³、應力 MPa）。</p>
         <button type="submit" hidden />
       </form>
     </Modal>

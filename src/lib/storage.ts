@@ -34,20 +34,20 @@ function newId(): string {
     : `m-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-const NO_CHANGES = 'No field changes';
+const NO_CHANGES = '無欄位變更';
 
 /** Human-readable diff of two records for the history log. */
 function describeChanges(before: Material, after: MaterialInput): string {
   const changes: string[] = [];
-  if (before.name !== after.name) changes.push(`name: ${before.name} → ${after.name}`);
-  if (before.category !== after.category) changes.push(`category: ${before.category} → ${after.category}`);
+  if (before.name !== after.name) changes.push(`名稱: ${before.name} → ${after.name}`);
+  if (before.category !== after.category) changes.push(`Category: ${before.category} → ${after.category}`);
   for (const p of PROPS) {
     if (before[p.key] !== after[p.key]) {
-      changes.push(`${p.symbol}: ${formatValue(p.key, before[p.key])} → ${formatValue(p.key, after[p.key])}`);
+      changes.push(`${p.label}: ${formatValue(p.key, before[p.key])} → ${formatValue(p.key, after[p.key])}`);
     }
   }
-  if (before.source !== after.source) changes.push('source');
-  if (before.notes !== after.notes) changes.push('notes');
+  if (before.source !== after.source) changes.push('Source');
+  if (before.notes !== after.notes) changes.push('備註');
   return changes.length ? changes.join('; ') : NO_CHANGES;
 }
 
@@ -64,7 +64,7 @@ export function useMaterials() {
       ...input,
       id: newId(),
       updatedAt: now,
-      history: [{ at: now, action: 'created', summary: 'Record created' }],
+      history: [{ at: now, action: 'created', summary: '建立記錄' }],
     };
     setMaterials((list) => [...list, m]);
     return m;
@@ -106,7 +106,7 @@ export function useMaterials() {
           ...m,
           ...row,
           updatedAt: now,
-          history: [{ at: now, action: 'imported', summary: `CSV import — ${diff}` }, ...m.history],
+          history: [{ at: now, action: 'imported', summary: `CSV 匯入 — ${diff}` }, ...m.history],
         };
         updated++;
       } else {
@@ -114,7 +114,7 @@ export function useMaterials() {
           ...row,
           id: newId(),
           updatedAt: now,
-          history: [{ at: now, action: 'imported', summary: 'Created by CSV import' }],
+          history: [{ at: now, action: 'imported', summary: '由 CSV 匯入建立' }],
         });
         added++;
       }

@@ -1,29 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material, MaterialInput, View } from './types';
 import { useMaterials } from './lib/storage';
-import { downloadCsv } from './lib/csv';
+import { useColumnPrefs } from './lib/columns';
 import { DEFAULT_UNITS } from './lib/format';
 import type { UnitPrefs } from './lib/format';
-import { matchesQuery, sortMaterials } from './lib/sort';
+import { matchesQuery, matchesUpdated, sortMaterials } from './lib/sort';
 import type { SortKey, SortState } from './lib/sort';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
-import type { CategoryFilter } from './components/Toolbar';
+import type { Filters } from './components/Toolbar';
+import { ColumnSettings } from './components/ColumnSettings';
 import { MaterialTable } from './components/MaterialTable';
 import { MaterialDrawer } from './components/MaterialDrawer';
 import { MaterialForm } from './components/MaterialForm';
 import { ComparePage } from './components/ComparePage';
 import { MaterialMap } from './components/MaterialMap';
-import { ConfirmDelete, HelpDialog, ImportExportDialog, MapInfoDialog, UnitsDialog } from './components/Dialogs';
+import { ConfirmDelete, HelpDialog, ImportExportDialog, MapInfoDialog } from './components/Dialogs';
 
-type Dialog = 'units' | 'help' | 'io' | 'mapInfo' | null;
+type Dialog = 'help' | 'io' | 'mapInfo' | null;
 
 export function App() {
   const { materials, add, update, remove, importMany, resetToSamples } = useMaterials();
 
   const [view, setView] = useState<View>('materials');
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<CategoryFilter>('All');
+  const [filters, setFilters] = useState<Filters>({ category: 'all', source: 'all', updated: 'all' });
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const cols = useColumnPrefs();
   const [sort, setSort] = useState<SortState>({ key: 'name', dir: 'asc' });
   const [selected, setSelected] = useState<string[]>([]);
   const [units, setUnits] = useState<UnitPrefs>(DEFAULT_UNITS);
@@ -59,24 +62,20 @@ export function App() {
   }, []);
 
   const rows = useMemo(() => {
-    const filtered = materials.filter((m) => (category === 'All' || m.category === category) && matchesQuery(m, query));
+    const filtered = materials.filter(
+      (m) =>
+        (filters.category === 'all' || m.category === filters.category) &&
+        (filters.source === 'all' || m.source === filters.source) &&
+        matchesUpdated(m, filters.updated) &&
+        matchesQuery(m, query),
+    );
     return sortMaterials(filtered, sort);
-  }, [materials, category, query, sort]);
+  }, [materials, filters, query, sort]);
 
   const detail = materials.find((m) => m.id === detailId) ?? null;
 
-  const toggle = (id: string): boolean => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((x) => x !== id));
-      return true;
-    }
-    if (selected.length >= 3) {
-      setNotice('Compare supports up to 3 materials — untick one first.');
-      return false;
-    }
-    setSelected([...selected, id]);
-    return true;
-  };
+  const toggle = (id: string) =>
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const onSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
@@ -84,10 +83,10 @@ export function App() {
   const save = (input: MaterialInput) => {
     if (editing && editing !== 'new') {
       update(editing.id, input);
-      setNotice(`Saved changes to ${input.name}.`);
+      setNotice(`已儲存 ${input.name} 的變更。`);
     } else {
       add(input);
-      setNotice(`Added ${input.name}.`);
+      setNotice(`已新增 ${input.name}。`);
     }
     setEditing(null);
   };
@@ -95,7 +94,7 @@ export function App() {
   const confirmDelete = () => {
     if (!deleting) return;
     remove(deleting.id);
-    setNotice(`Deleted ${deleting.name}.`);
+    setNotice(`已刪除 ${deleting.name}。`);
     if (detailId === deleting.id) setDetailId(null);
     setDeleting(null);
   };
@@ -108,10 +107,7 @@ export function App() {
     <div className="app">
       <Header
         view={view}
-        query={query}
-        onQuery={setQuery}
         onNavigate={navigate}
-        onImportExport={() => setDialog('io')}
         onHelp={() => setDialog('help')}
         compareCount={selected.length}
       />
@@ -123,18 +119,34 @@ export function App() {
             materials={materials}
             query={query}
             onQuery={setQuery}
-            category={category}
-            onCategory={setCategory}
+            filters={filters}
+            onFilters={setFilters}
             selectedCount={selected.length}
-            onMap={() => setView('map')}
             onCompare={() => setView('compare')}
-            onUnits={() => setDialog('units')}
-            onExport={() => downloadCsv(rows)}
+            onClearSelection={() => setSelected([])}
+            onMap={() => setView('map')}
+            onColumns={() => setColumnsOpen((o) => !o)}
+            onImportExport={() => setDialog('io')}
             onAdd={() => setEditing('new')}
+            columnsPopover={
+              columnsOpen && (
+                <ColumnSettings
+                  prefs={cols.prefs}
+                  units={units}
+                  onUnits={setUnits}
+                  onMove={cols.move}
+                  onStep={cols.step}
+                  onToggle={cols.toggle}
+                  onReset={cols.reset}
+                  onClose={() => setColumnsOpen(false)}
+                />
+              )
+            }
           />
           <MaterialTable
             rows={rows}
             total={materials.length}
+            columns={cols.visible}
             sort={sort}
             onSort={onSort}
             selected={selected}
@@ -155,6 +167,7 @@ export function App() {
           selected={selected}
           units={units}
           onToggle={toggle}
+          onClear={() => setSelected([])}
           onBack={() => setView('materials')}
           onOpen={openDetail}
         />
@@ -183,12 +196,12 @@ export function App() {
         />
       )}
       {deleting && <ConfirmDelete material={deleting} onConfirm={confirmDelete} onClose={() => setDeleting(null)} />}
-      {dialog === 'units' && <UnitsDialog units={units} onChange={setUnits} onClose={() => setDialog(null)} />}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
       {dialog === 'mapInfo' && <MapInfoDialog onClose={() => setDialog(null)} />}
       {dialog === 'io' && (
         <ImportExportDialog
           materials={materials}
+          visibleRows={rows}
           onImport={importMany}
           onReset={() => {
             resetToSamples();

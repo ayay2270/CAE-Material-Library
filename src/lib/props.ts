@@ -1,28 +1,21 @@
-import type { Material, PropKey } from '../types';
+import type { PropKey } from '../types';
 
 export interface PropDef {
   key: PropKey;
   symbol: string;
+  /** English property name — kept English everywhere in the UI. */
   label: string;
   unit: string;
   optional?: boolean;
-  /** Short note shown in the header when the property is optional. */
-  group: 'basic' | 'supplemental';
 }
 
-// Order matches the table columns.
+// Order matches the default table columns.
 export const PROPS: PropDef[] = [
-  { key: 'density', symbol: 'ρ', label: 'Density', unit: 't/mm³', group: 'basic' },
-  { key: 'youngsModulus', symbol: 'E', label: "Young's Modulus", unit: 'MPa', group: 'basic' },
-  { key: 'poissonRatio', symbol: 'ν', label: "Poisson's Ratio", unit: '—', group: 'basic' },
-  { key: 'yieldStress', symbol: 'σy', label: 'Yield Stress', unit: 'MPa', group: 'basic' },
-  { key: 'etan', symbol: 'Et', label: 'ETAN', unit: 'MPa', optional: true, group: 'supplemental' },
-  { key: 'ultimateStress', symbol: 'σu', label: 'Ultimate Stress', unit: 'MPa', group: 'basic' },
-  { key: 'elongation', symbol: 'ε', label: 'Elongation', unit: '%', optional: true, group: 'supplemental' },
+  { key: 'density', symbol: 'ρ', label: 'Density', unit: 't/mm³' },
+  { key: 'youngsModulus', symbol: 'E', label: "Young's Modulus", unit: 'MPa' },
+  { key: 'poissonRatio', symbol: 'ν', label: "Poisson's Ratio", unit: '—' },
+  { key: 'yieldStress', symbol: 'σy', label: 'Yield Stress', unit: 'MPa' },
+  { key: 'etan', symbol: 'Et', label: 'ETAN', unit: 'MPa', optional: true },
+  { key: 'ultimateStress', symbol: 'σu', label: 'Ultimate Stress', unit: 'MPa' },
+  { key: 'elongation', symbol: 'ε', label: 'Elongation', unit: '%', optional: true },
 ];
-
-export const PROP_COUNT = PROPS.length;
-
-export function filledCount(m: Material): number {
-  return PROPS.filter((p) => m[p.key] !== null).length;
-}

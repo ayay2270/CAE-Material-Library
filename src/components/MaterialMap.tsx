@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Category, Material } from '../types';
-import { CATEGORIES } from '../types';
-import { ArrowLeftIcon, InfoIcon, ResetIcon } from './icons';
+import { CATEGORIES, CATEGORY_LABEL } from '../types';
+import { ArrowLeftIcon, InfoIcon } from './icons';
 
 export const CATEGORY_COLOR: Record<Category, string> = {
   Metal: '#2563eb',
@@ -24,21 +24,6 @@ interface Scale {
   minor: number[];
 }
 
-function niceStep(range: number, target: number) {
-  const raw = range / target;
-  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const n = raw / mag;
-  return (n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10) * mag;
-}
-
-function linearScale(max: number, a: number, b: number): Scale & { hi: number } {
-  const step = niceStep(max, 7);
-  const hi = Math.ceil((max * 1.04) / step) * step;
-  const ticks: number[] = [];
-  for (let v = 0; v <= hi + step / 1e6; v += step) ticks.push(Number(v.toPrecision(10)));
-  return { hi, ticks, minor: [], to: (v) => a + (v / hi) * (b - a) };
-}
-
 function logScale(min: number, max: number, a: number, b: number): Scale {
   const lo = Math.log10(min) - 0.2;
   const hi = Math.log10(max) + 0.2;
@@ -58,7 +43,7 @@ function logScale(min: number, max: number, a: number, b: number): Scale {
 }
 
 function fmtTick(v: number, sci: boolean) {
-  if (sci) return v === 0 ? '0' : v.toExponential(0).replace('e-', 'E-').replace('e+', 'E');
+  if (sci) return v.toExponential(0).replace('e-', 'E-').replace('e+', 'E');
   return v.toLocaleString('en-US');
 }
 
@@ -102,20 +87,17 @@ function placeLabels(pts: Pt[], bounds: { l: number; r: number; t: number; b: nu
 }
 
 export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
-  const [logX, setLogX] = useState(false);
-  const [logY, setLogY] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
   const [hoverId, setHoverId] = useState<string | null>(null);
-  const [pinnedId, setPinnedId] = useState<string | null>(null);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 560 });
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setSize({ w: Math.max(480, el.clientWidth), h: Math.max(380, el.clientHeight) }));
+    const measure = () => setSize({ w: Math.max(520, el.clientWidth), h: Math.max(380, el.clientHeight) });
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setSize({ w: Math.max(480, el.clientWidth), h: Math.max(380, el.clientHeight) });
+    measure();
     return () => ro.disconnect();
   }, []);
 
@@ -124,64 +106,47 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
   const skipped = materials.filter((m) => m.density === null || m.youngsModulus === null);
 
   const { w, h } = size;
-  const pad = { l: 78, r: 28, t: 24, b: 58 };
+  const pad = { l: 80, r: 28, t: 24, b: 60 };
 
   const geom = useMemo(() => {
     if (plottable.length === 0) return null;
     const dens = plottable.map((m) => m.density as number);
     const mods = plottable.map((m) => m.youngsModulus as number);
-    const xs = logX
-      ? logScale(Math.min(...dens), Math.max(...dens), pad.l, w - pad.r)
-      : linearScale(Math.max(...dens), pad.l, w - pad.r);
-    const ys = logY
-      ? logScale(Math.min(...mods), Math.max(...mods), h - pad.b, pad.t)
-      : linearScale(Math.max(...mods), h - pad.b, pad.t);
+    // Fixed log–log axes keep light/soft and heavy/stiff materials readable on one chart.
+    const xs = logScale(Math.min(...dens), Math.max(...dens), pad.l, w - pad.r);
+    const ys = logScale(Math.min(...mods), Math.max(...mods), h - pad.b, pad.t);
     const pts: Pt[] = plottable.map((m) => ({ m, cx: xs.to(m.density as number), cy: ys.to(m.youngsModulus as number) }));
     const labels = placeLabels(pts, { l: pad.l, r: w - pad.r, t: pad.t, b: h - pad.b });
     return { xs, ys, pts, labels };
-  }, [plottable, logX, logY, w, h]);
+  }, [plottable, w, h]);
 
-  const activeId = hoverId ?? pinnedId;
-  const active = plottable.find((m) => m.id === activeId) ?? null;
-  const activePt = geom?.pts.find((p) => p.m.id === activeId) ?? null;
-
-  useEffect(() => {
-    if (pinnedId && !plottable.some((m) => m.id === pinnedId)) setPinnedId(null);
-  }, [plottable, pinnedId]);
-
-  const reset = () => {
-    setLogX(false);
-    setLogY(true);
-    setShowLabels(true);
-    setHoverId(null);
-    setPinnedId(null);
-  };
-
+  const active = plottable.find((m) => m.id === hoverId) ?? null;
+  const activePt = geom?.pts.find((p) => p.m.id === hoverId) ?? null;
   const used = CATEGORIES.filter((c) => plottable.some((m) => m.category === c));
 
   return (
     <main className="page map-page">
       <div className="page-head">
         <button className="back-link" onClick={onBack}>
-          <ArrowLeftIcon /> Back to materials
+          <ArrowLeftIcon /> 返回材料列表
         </button>
-        <h1>Material Map</h1>
+        <h1>材料地圖</h1>
         <span className="map-subtitle">
-          Lightweight vs. Stiffness (ρ–E)
-          <button className="info-btn" onClick={onInfo} aria-label="How to read this chart" title="How to read this chart">
+          輕量化 vs. 剛性（Lightweight vs. Stiffness, ρ – E）
+          <button className="info-btn" onClick={onInfo} aria-label="如何閱讀這張圖" title="如何閱讀這張圖">
             <InfoIcon size={15} />
           </button>
         </span>
+        <span className="page-sub">輔助工具：以 ρ–E 圖快速瀏覽材料的輕量化與剛性分佈。</span>
       </div>
 
-      <div className="map-layout">
-        <div className="map-chart" ref={wrapRef}>
-          {geom ? (
-            <svg width={w} height={h} role="img" aria-label="Scatter plot of Density versus Young's Modulus" data-testid="map-svg">
-              {/* "light + stiff" corner hint */}
-              <rect x={pad.l} y={pad.t} width={Math.min(190, (w - pad.l - pad.r) * 0.3)} height={46} className="ideal-zone" />
-              <text x={pad.l + 10} y={pad.t + 19} className="ideal-text">Lighter + stiffer</text>
-              <text x={pad.l + 10} y={pad.t + 35} className="ideal-sub">upper-left region</text>
+      <div className="map-chart" ref={wrapRef}>
+        {geom ? (
+          <>
+            <svg width={w} height={h} role="group" aria-label="Density 與 Young's Modulus 散佈圖" data-testid="map-svg">
+              <rect x={pad.l} y={pad.t} width={Math.min(200, (w - pad.l - pad.r) * 0.3)} height={46} className="ideal-zone" />
+              <text x={pad.l + 10} y={pad.t + 19} className="ideal-text">輕量 + 高剛性</text>
+              <text x={pad.l + 10} y={pad.t + 35} className="ideal-sub">左上方區域</text>
 
               {geom.ys.ticks.map((t) => (
                 <g key={`yt${t}`}>
@@ -199,10 +164,10 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
               <line x1={pad.l} x2={pad.l} y1={pad.t} y2={h - pad.b} className="axis" />
 
               <text x={(pad.l + w - pad.r) / 2} y={h - 14} textAnchor="middle" className="axis-title">
-                ρ Density (t/mm³)  ←  lighter
+                Density ρ (t/mm³)　← 較輕
               </text>
               <text transform={`translate(18 ${(pad.t + h - pad.b) / 2}) rotate(-90)`} textAnchor="middle" className="axis-title">
-                E Young's Modulus (MPa)  →  stiffer
+                Young's Modulus E (MPa)　較剛 →
               </text>
 
               {activePt && (
@@ -214,19 +179,25 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
 
               {geom.pts.map(({ m, cx, cy }) => {
                 const lab = geom.labels.get(m.id);
-                const isActive = m.id === activeId;
+                const isActive = m.id === hoverId;
                 return (
                   <g
                     key={m.id}
                     className={`map-pt ${isActive ? 'active' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${m.name}：Density ${m.density}、Young's Modulus ${m.youngsModulus}，按 Enter 查看詳細資料`}
                     onMouseEnter={() => setHoverId(m.id)}
                     onMouseLeave={() => setHoverId(null)}
-                    onClick={() => setPinnedId(pinnedId === m.id ? null : m.id)}
+                    onFocus={() => setHoverId(m.id)}
+                    onBlur={() => setHoverId(null)}
+                    onClick={() => onOpen(m)}
+                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen(m))}
                     data-name={m.name}
                   >
                     {isActive && <circle cx={cx} cy={cy} r={11} className="pt-ring" />}
                     <circle cx={cx} cy={cy} r={6.5} fill={CATEGORY_COLOR[m.category]} className="pt-dot" />
-                    {(showLabels || isActive) && lab && (
+                    {lab && (
                       <text x={lab.x} y={lab.y} textAnchor={lab.anchor} className="pt-text">{m.name}</text>
                     )}
                   </g>
@@ -235,74 +206,38 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
 
               {active && activePt && (
                 <foreignObject
-                  x={Math.min(activePt.cx + 16, w - 200)}
-                  y={Math.max(pad.t, Math.min(activePt.cy + 14, h - pad.b - 92))}
-                  width="184"
-                  height="86"
+                  x={Math.min(activePt.cx + 16, w - 250)}
+                  y={Math.max(pad.t, Math.min(activePt.cy + 14, h - pad.b - 106))}
+                  width="232"
+                  height="100"
                   pointerEvents="none"
                 >
                   <div className="map-tip">
                     <b>{active.name}</b>
-                    <span>{active.category}</span>
-                    <div>ρ <i>{active.density!.toExponential(2).replace('e-', 'E-')}</i> t/mm³</div>
-                    <div>E <i>{active.youngsModulus!.toLocaleString('en-US')}</i> MPa</div>
+                    <span>{CATEGORY_LABEL[active.category]} · 點擊查看詳細資料</span>
+                    <div>Density <i>{active.density!.toExponential(2).replace('e-', 'E-')}</i> t/mm³</div>
+                    <div>Young's Modulus <i>{active.youngsModulus!.toLocaleString('en-US')}</i> MPa</div>
                   </div>
                 </foreignObject>
               )}
             </svg>
-          ) : (
-            <div className="empty-state">No material has both Density and Young's Modulus recorded, so nothing can be plotted.</div>
-          )}
-        </div>
 
-        <aside className="map-panel">
-          <h3>Axes</h3>
-          <dl className="axes">
-            <dt>X axis</dt>
-            <dd>
-              <span>Density ρ (t/mm³)</span>
-              <button className={`toggle ${logX ? 'on' : ''}`} aria-pressed={logX} onClick={() => setLogX(!logX)}>LOG</button>
-            </dd>
-            <dt>Y axis</dt>
-            <dd>
-              <span>Young's Modulus E (MPa)</span>
-              <button className={`toggle ${logY ? 'on' : ''}`} aria-pressed={logY} onClick={() => setLogY(!logY)}>LOG</button>
-            </dd>
-          </dl>
-          <label className="check">
-            <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Show labels
-          </label>
-          <button className="btn full" onClick={reset}>
-            <ResetIcon /> Reset View
-          </button>
-
-          <h3>Category</h3>
-          <ul className="legend">
-            {used.map((c) => (
-              <li key={c}>
-                <i style={{ background: CATEGORY_COLOR[c] }} /> {c}
-              </li>
-            ))}
-          </ul>
-
-          <h3>Selected</h3>
-          {active ? (
-            <div className="sel-card">
-              <b>{active.name}</b>
-              <div>ρ = {active.density!.toExponential(2).replace('e-', 'E-')} t/mm³</div>
-              <div>E = {active.youngsModulus!.toLocaleString('en-US')} MPa</div>
-              <button className="link-btn" onClick={() => onOpen(active)}>Open details →</button>
-            </div>
-          ) : (
-            <p className="muted small">Hover or click a point to see its values.</p>
-          )}
-
-          {skipped.length > 0 && (
-            <p className="skipped" data-testid="map-skipped">
-              Not plotted (ρ or E missing): {skipped.map((m) => m.name).join(', ')}
-            </p>
-          )}
-        </aside>
+            <ul className="map-legend" aria-label="材料類別圖例">
+              {used.map((c) => (
+                <li key={c}>
+                  <i style={{ background: CATEGORY_COLOR[c] }} /> {CATEGORY_LABEL[c]}
+                </li>
+              ))}
+            </ul>
+            {skipped.length > 0 && (
+              <p className="skipped" data-testid="map-skipped">
+                未顯示（缺少 Density 或 Young's Modulus）：{skipped.map((m) => m.name).join('、')}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="empty-state">目前沒有同時具備 Density 與 Young's Modulus 的材料，無法繪製地圖。</div>
+        )}
       </div>
     </main>
   );

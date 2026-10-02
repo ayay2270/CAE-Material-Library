@@ -45,6 +45,13 @@ export function formatDate(iso: string): string {
   return d.getFullYear() === new Date().getFullYear() ? base : `${d.getFullYear()}/${base}`;
 }
 
+/** "2026-09-17" */
+export function formatDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export function formatDateLong(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';

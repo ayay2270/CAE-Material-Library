@@ -1,15 +1,18 @@
 import { useEffect, useRef } from 'react';
 import type { Material } from '../types';
-import { PROPS, filledCount } from '../lib/props';
-import { formatDate, formatValue, unitFor } from '../lib/format';
+import { CATEGORY_LABEL } from '../types';
+import { PROPS } from '../lib/props';
+import { formatDay, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
+import { COLUMN_BY_ID } from '../lib/columns';
+import type { ColId } from '../lib/columns';
 import type { SortKey, SortState } from '../lib/sort';
-import { CompletenessBar } from './CompletenessBar';
 import { EditIcon, SortArrows, TrashIcon } from './icons';
 
 interface Props {
   rows: Material[];
   total: number;
+  columns: ColId[];
   sort: SortState;
   onSort: (k: SortKey) => void;
   selected: string[];
@@ -22,33 +25,63 @@ interface Props {
   activeId: string | null;
 }
 
+const propDef = (id: ColId) => PROPS.find((p) => p.key === id);
+
 export function MaterialTable(p: Props) {
   const selectAll = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (selectAll.current) selectAll.current.indeterminate = p.selected.length > 0;
   }, [p.selected.length]);
 
-  const th = (key: SortKey, label: string, opts?: { sub?: string; symbol?: string; className?: string }) => {
-    const dir = p.sort.key === key ? p.sort.dir : null;
+  const header = (id: ColId) => {
+    const def = COLUMN_BY_ID[id];
+    const prop = propDef(id);
+    const dir = p.sort.key === id ? p.sort.dir : null;
+    const sub = prop ? `${unitFor(prop, p.units)}${prop.optional ? ' · optional' : ''}` : undefined;
     return (
       <th
-        key={key}
-        className={`sortable ${opts?.className ?? ''}`}
+        key={id}
+        className={`sortable ${def.numeric ? 'num' : ''} ${id === 'name' ? 'col-name sticky s2' : `col-${id}`}`}
         aria-sort={dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : 'none'}
       >
-        <button onClick={() => p.onSort(key)} title={`Sort by ${label}`}>
+        <button onClick={() => p.onSort(id as SortKey)} title={`依 ${def.label} 排序`}>
           <span className="th-text">
-            <span className="th-main">
-              {opts?.symbol && <span className="sym">{opts.symbol}</span>}
-              {label}
-            </span>
-            {opts?.sub && <span className="th-sub">{opts.sub}</span>}
+            <span className="th-main">{def.label}</span>
+            {sub && <span className="th-sub">{sub}</span>}
           </span>
           <SortArrows dir={dir} />
         </button>
       </th>
     );
   };
+
+  const cell = (id: ColId, m: Material) => {
+    const prop = propDef(id);
+    if (prop) {
+      const v = m[prop.key];
+      return (
+        <td key={id} className={`num ${v === null ? 'missing' : ''}`} title={v === null ? `${prop.label} 無資料` : undefined}>
+          {formatValue(prop.key, v, p.units)}
+        </td>
+      );
+    }
+    switch (id) {
+      case 'name':
+        return <td key={id} className="col-name sticky s2">{m.name}</td>;
+      case 'category':
+        return <td key={id} className="col-category">{CATEGORY_LABEL[m.category]}</td>;
+      case 'source':
+        return (
+          <td key={id} className="col-source" title={m.source}>
+            {m.source || <span className="muted">—</span>}
+          </td>
+        );
+      default:
+        return <td key={id} className="col-updatedAt" title={m.updatedAt}>{formatDay(m.updatedAt)}</td>;
+    }
+  };
+
+  const colSpan = p.columns.length + 3;
 
   return (
     <div className="table-wrap">
@@ -63,23 +96,12 @@ export function MaterialTable(p: Props) {
                   checked={false}
                   disabled={p.selected.length === 0}
                   onChange={p.onClearSelection}
-                  aria-label="Clear selection"
-                  title="Clear selection"
+                  aria-label="清除選取"
+                  title="清除選取"
                 />
               </th>
               <th className="col-idx sticky s1">#</th>
-              {th('name', 'Material', { sub: 'Name', className: 'col-name sticky s2' })}
-              {th('category', 'Category', { className: 'col-cat' })}
-              {PROPS.map((d) =>
-                th(d.key, d.label, {
-                  symbol: d.symbol,
-                  sub: d.optional ? `${unitFor(d, p.units)} · optional` : unitFor(d, p.units),
-                  className: 'num',
-                }),
-              )}
-              {th('completeness', 'Completeness', { sub: `Filled / ${PROPS.length}`, className: 'col-comp' })}
-              {th('source', 'Source', { className: 'col-src' })}
-              {th('updatedAt', 'Updated', { sub: 'Last', className: 'col-date' })}
+              {p.columns.map(header)}
               <th className="col-actions">Actions</th>
             </tr>
           </thead>
@@ -97,31 +119,15 @@ export function MaterialTable(p: Props) {
                   }}
                 >
                   <td className="col-check sticky s0" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={checked} onChange={() => p.onToggle(m.id)} aria-label={`Select ${m.name}`} />
+                    <input type="checkbox" checked={checked} onChange={() => p.onToggle(m.id)} aria-label={`選取 ${m.name}`} />
                   </td>
                   <td className="col-idx sticky s1">{i + 1}</td>
-                  <td className="col-name sticky s2">{m.name}</td>
-                  <td className="col-cat">{m.category}</td>
-                  {PROPS.map((d) => {
-                    const v = m[d.key];
-                    return (
-                      <td key={d.key} className={`num ${v === null ? 'missing' : ''}`} title={v === null ? `${d.label} not available` : undefined}>
-                        {formatValue(d.key, v, p.units)}
-                      </td>
-                    );
-                  })}
-                  <td className="col-comp">
-                    <CompletenessBar filled={filledCount(m)} />
-                  </td>
-                  <td className="col-src" title={m.source}>
-                    {m.source || <span className="muted">—</span>}
-                  </td>
-                  <td className="col-date">{formatDate(m.updatedAt)}</td>
+                  {p.columns.map((id) => cell(id, m))}
                   <td className="col-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`Edit ${m.name}`} title="Edit">
+                    <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title="編輯">
                       <EditIcon />
                     </button>
-                    <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`Delete ${m.name}`} title="Delete">
+                    <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title="刪除">
                       <TrashIcon />
                     </button>
                   </td>
@@ -130,21 +136,15 @@ export function MaterialTable(p: Props) {
             })}
             {p.rows.length === 0 && (
               <tr className="empty-row">
-                <td colSpan={PROPS.length + 8}>
-                  {p.total === 0 ? 'No materials yet. Use “+ Add Material” to create the first record.' : 'No materials match the current search / filter.'}
-                </td>
+                <td colSpan={colSpan}>{p.total === 0 ? '尚無材料，請按「新增材料」建立第一筆資料。' : '沒有符合目前搜尋 / 篩選條件的材料。'}</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
       <div className="table-foot">
-        <span>
-          {p.rows.length === 0
-            ? `Showing 0 of ${p.total} materials`
-            : `Showing 1 – ${p.rows.length} of ${p.total} materials`}
-        </span>
-        <span className="foot-hint">Click a row for details · tick 2–3 rows to compare</span>
+        <span>{p.rows.length === 0 ? `顯示 0 筆，共 ${p.total} 筆材料` : `顯示第 1 – ${p.rows.length} 筆，共 ${p.total} 筆材料`}</span>
+        <span className="foot-hint">點選列可查看詳細資料 · 勾選多筆材料即可比較</span>
       </div>
     </div>
   );

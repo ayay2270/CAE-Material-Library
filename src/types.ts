@@ -1,6 +1,15 @@
 export const CATEGORIES = ['Metal', 'Plastic', 'Composite', 'Elastomer', 'Others'] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** Traditional Chinese UI label for each stored category value (stored values are unchanged). */
+export const CATEGORY_LABEL: Record<Category, string> = {
+  Metal: '金屬',
+  Plastic: '塑膠',
+  Composite: '複合材料',
+  Elastomer: '彈性體',
+  Others: '其他',
+};
+
 export type PropKey =
   | 'density'
   | 'youngsModulus'

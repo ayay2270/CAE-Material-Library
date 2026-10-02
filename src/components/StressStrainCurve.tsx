@@ -30,7 +30,7 @@ export function StressStrainCurve({ m }: { m: Material }) {
   if (!pts) {
     return (
       <div className="curve-empty">
-        Curve not available — needs E, σy, ETAN and either σu or elongation.
+        無法繪製曲線：需要 Young's Modulus、Yield Stress、ETAN，以及 Ultimate Stress 或 Elongation。
       </div>
     );
   }
@@ -47,7 +47,7 @@ export function StressStrainCurve({ m }: { m: Material }) {
 
   return (
     <figure className="curve">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Idealised stress–strain curve for ${m.name}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${m.name} 的理想化應力–應變曲線`}>
         {yTicks.map((t) => (
           <g key={`y${t}`}>
             <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} className="grid" />
@@ -73,7 +73,7 @@ export function StressStrainCurve({ m }: { m: Material }) {
         <text x={(pad.l + W - pad.r) / 2} y={H - 4} textAnchor="middle" className="axis-title">Strain (mm/mm)</text>
         <text transform={`translate(11 ${(pad.t + H - pad.b) / 2}) rotate(-90)`} textAnchor="middle" className="axis-title">Stress (MPa)</text>
       </svg>
-      <figcaption>Idealised bilinear curve built from E, σy, ETAN and σu — a visual aid, not measured test data.</figcaption>
+      <figcaption>理想化雙線性曲線，由 Young's Modulus、Yield Stress、ETAN 與 Ultimate Stress 推算，僅供視覺參考，非實測資料。</figcaption>
     </figure>
   );
 }

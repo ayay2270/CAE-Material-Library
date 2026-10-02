@@ -89,12 +89,12 @@ export interface ImportResult {
 export function csvToMaterials(text: string): ImportResult {
   const table = parseCsv(text);
   const errors: string[] = [];
-  if (table.length < 2) return { rows: [], errors: ['The file has no data rows.'] };
+  if (table.length < 2) return { rows: [], errors: ['檔案沒有資料列。'] };
 
   const header = table[0].map((h) => h.trim().toLowerCase());
   const col = (prefix: string) => header.findIndex((h) => h.startsWith(prefix.toLowerCase()));
   const nameIdx = col('name');
-  if (nameIdx < 0) return { rows: [], errors: ['Missing required "Name" column.'] };
+  if (nameIdx < 0) return { rows: [], errors: ['缺少必要的 "Name" 欄位。'] };
   const catIdx = col('category');
   const srcIdx = col('source');
   const notesIdx = col('notes');
@@ -105,13 +105,13 @@ export function csvToMaterials(text: string): ImportResult {
     const line = i + 2;
     const name = (r[nameIdx] ?? '').trim();
     if (!name) {
-      errors.push(`Line ${line}: missing name — skipped.`);
+      errors.push(`第 ${line} 行：缺少 Name，已略過。`);
       return;
     }
     const rawCat = (r[catIdx] ?? '').trim();
     const category = (CATEGORIES.find((c) => c.toLowerCase() === rawCat.toLowerCase()) ?? 'Others') as Category;
     if (rawCat && category === 'Others' && rawCat.toLowerCase() !== 'others') {
-      errors.push(`Line ${line}: unknown category "${rawCat}" — set to Others.`);
+      errors.push(`第 ${line} 行：未知的 Category「${rawCat}」，已設為 Others。`);
     }
     const m: MaterialInput = {
       name,
@@ -131,7 +131,7 @@ export function csvToMaterials(text: string): ImportResult {
       if (raw === '' || raw === '—') return;
       const n = Number(raw);
       if (Number.isFinite(n)) m[p.key] = n;
-      else errors.push(`Line ${line}: "${raw}" is not a number for ${p.label} — left empty.`);
+      else errors.push(`第 ${line} 行：${p.label} 的「${raw}」不是數字，已留空。`);
     });
     rows.push(m);
   });
