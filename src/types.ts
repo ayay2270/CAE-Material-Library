@@ -44,4 +44,4 @@ export interface Material {
 
 export type MaterialInput = Omit<Material, 'id' | 'updatedAt' | 'history'>;
 
-export type View = 'materials' | 'compare' | 'map';
+export type View = 'materials' | 'etan' | 'map' | 'compare';

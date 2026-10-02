@@ -53,17 +53,90 @@ interface Pt {
   cy: number;
 }
 
-/** Greedy label placement: try right, left, above, below; keep the first spot that doesn't collide. */
+interface Label {
+  x: number;
+  y: number;
+  anchor: 'start' | 'end' | 'middle';
+  /** Leader line from the dot to the label (used when points overlap). */
+  leader?: { x1: number; y1: number; x2: number; y2: number };
+}
+interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+const hit = (a: Box, b: Box) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+const textW = (name: string) => name.length * 6.8 + 4;
+const CLUSTER_PX = 18;
+
+/**
+ * Label placement.
+ * 1. Points closer than CLUSTER_PX (e.g. SGCC / SUS304 0H / SUS304 1/2H, or identical ZAMAK3 / ZAMAK5) are
+ *    labelled in a stacked column beside the cluster with thin leader lines, so every name stays readable.
+ * 2. Remaining points use greedy placement (right, left, above, below) that avoids dots and other labels.
+ */
 function placeLabels(pts: Pt[], bounds: { l: number; r: number; t: number; b: number }) {
-  const placed: { x: number; y: number; w: number; h: number }[] = [];
-  const dots = pts.map((p) => ({ x: p.cx - 7, y: p.cy - 7, w: 14, h: 14 }));
-  const hit = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
-    a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-  const out = new Map<string, { x: number; y: number; anchor: 'start' | 'end' | 'middle' }>();
+  const out = new Map<string, Label>();
+  const placed: Box[] = [];
+  const dots: Box[] = pts.map((p) => ({ x: p.cx - 7, y: p.cy - 7, w: 14, h: 14 }));
+  const inside = (b: Box) => b.x >= bounds.l && b.x + b.w <= bounds.r && b.y >= bounds.t && b.y + b.h <= bounds.b;
+
+  // --- clusters (union-find on pixel distance) ---
+  const parent = pts.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < pts.length; i++)
+    for (let j = i + 1; j < pts.length; j++)
+      if (Math.hypot(pts[i].cx - pts[j].cx, pts[i].cy - pts[j].cy) < CLUSTER_PX) parent[find(j)] = find(i);
+  const groups = new Map<number, Pt[]>();
+  pts.forEach((p, i) => groups.set(find(i), [...(groups.get(find(i)) ?? []), p]));
+
+  const clustered = new Set<string>();
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const sorted = [...g].sort((a, b) => a.cy - b.cy || a.m.name.localeCompare(b.m.name));
+    const cx = g.reduce((t, p) => t + p.cx, 0) / g.length;
+    const cy = g.reduce((t, p) => t + p.cy, 0) / g.length;
+    const lineH = 18;
+    const span = (sorted.length - 1) * lineH;
+    const top = Math.min(Math.max(cy - span / 2, bounds.t + 12), bounds.b - span - 12);
+    const preferLeft = cx > (bounds.l + bounds.r) / 2;
+
+    const layout = (left: boolean) =>
+      sorted.map((p, k) => {
+        const ly = top + k * lineH;
+        const lx = left ? cx - 46 : cx + 46;
+        const w = textW(p.m.name);
+        const box: Box = { x: left ? lx - 4 - w : lx + 4, y: ly - 8, w, h: 16 };
+        return { p, ly, lx, box };
+      });
+    const fits = (items: ReturnType<typeof layout>) =>
+      items.every((it) => inside(it.box) && !dots.some((d, di) => pts[di].cx !== it.p.cx && hit(it.box, d)) && !placed.some((q) => hit(it.box, q)));
+
+    let items = layout(preferLeft);
+    if (!fits(items)) {
+      const alt = layout(!preferLeft);
+      if (fits(alt)) items = alt;
+    }
+    const left = items[0].box.x < cx;
+    for (const it of items) {
+      placed.push(it.box);
+      clustered.add(it.p.m.id);
+      out.set(it.p.m.id, {
+        x: left ? it.lx - 4 : it.lx + 4,
+        y: it.ly + 4,
+        anchor: left ? 'end' : 'start',
+        leader: { x1: it.p.cx, y1: it.p.cy, x2: it.lx, y2: it.ly },
+      });
+    }
+  }
+
+  // --- single points ---
   [...pts]
+    .filter((p) => !clustered.has(p.m.id))
     .sort((a, b) => a.cy - b.cy)
     .forEach((p) => {
-      const w = p.m.name.length * 6.6 + 4;
+      const w = textW(p.m.name);
       const h = 14;
       const cands = [
         { x: p.cx + 10, y: p.cy - h / 2, anchor: 'start' as const, bx: p.cx + 10 },
@@ -73,12 +146,8 @@ function placeLabels(pts: Pt[], bounds: { l: number; r: number; t: number; b: nu
       ];
       const pick =
         cands.find((c) => {
-          const box = { x: c.bx, y: c.y, w, h };
-          return (
-            box.x >= bounds.l && box.x + w <= bounds.r && box.y >= bounds.t && box.y + h <= bounds.b &&
-            !placed.some((q) => hit(box, q)) &&
-            !dots.some((d) => hit(box, d))
-          );
+          const box: Box = { x: c.bx, y: c.y, w, h };
+          return inside(box) && !placed.some((q) => hit(box, q)) && !dots.some((d) => hit(box, d));
         }) ?? cands[0];
       placed.push({ x: pick.bx, y: pick.y, w, h });
       out.set(p.m.id, { x: pick.x, y: pick.y + h - 3, anchor: pick.anchor });
@@ -195,14 +264,21 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
                     onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen(m))}
                     data-name={m.name}
                   >
-                    {isActive && <circle cx={cx} cy={cy} r={11} className="pt-ring" />}
-                    <circle cx={cx} cy={cy} r={6.5} fill={CATEGORY_COLOR[m.category]} className="pt-dot" />
+                    {lab?.leader && <line x1={lab.leader.x1} y1={lab.leader.y1} x2={lab.leader.x2} y2={lab.leader.y2} className="leader" />}
+                    <circle cx={cx} cy={cy} r={6} fill={CATEGORY_COLOR[m.category]} className="pt-dot" />
                     {lab && (
                       <text x={lab.x} y={lab.y} textAnchor={lab.anchor} className="pt-text">{m.name}</text>
                     )}
                   </g>
                 );
               })}
+
+              {activePt && active && (
+                <g pointerEvents="none">
+                  <circle cx={activePt.cx} cy={activePt.cy} r={11} className="pt-ring" />
+                  <circle cx={activePt.cx} cy={activePt.cy} r={6} fill={CATEGORY_COLOR[active.category]} className="pt-dot" />
+                </g>
+              )}
 
               {active && activePt && (
                 <foreignObject

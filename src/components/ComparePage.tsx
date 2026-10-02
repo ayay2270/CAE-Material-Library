@@ -48,9 +48,9 @@ export function ComparePage({ materials, selected, units, onToggle, onClear, onB
       {picked.length < 2 ? (
         <div className="empty-state">請在上方勾選至少 2 個材料（或在材料列表勾選多筆後按「比較材料」）。</div>
       ) : (
-        <div className="table-wrap">
+        <div className="table-wrap compare-wrap" data-count={picked.length} style={{ maxWidth: 210 + picked.length * 400 }}>
           <div className="table-scroll">
-            <table className="mat-table compare-table" data-testid="compare-table">
+            <table className="mat-table compare-table" data-testid="compare-table" style={{ minWidth: 210 + picked.length * 150 }}>
               <thead>
                 <tr>
                   <th className="prop-col">Property</th>

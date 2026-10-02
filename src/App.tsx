@@ -15,6 +15,7 @@ import { MaterialDrawer } from './components/MaterialDrawer';
 import { MaterialForm } from './components/MaterialForm';
 import { ComparePage } from './components/ComparePage';
 import { MaterialMap } from './components/MaterialMap';
+import { EtanPage } from './components/EtanPage';
 import { ConfirmDelete, HelpDialog, ImportExportDialog, MapInfoDialog } from './components/Dialogs';
 
 type Dialog = 'help' | 'io' | 'mapInfo' | null;
@@ -172,6 +173,8 @@ export function App() {
           onOpen={openDetail}
         />
       )}
+
+      {view === 'etan' && <EtanPage materials={materials} />}
 
       {view === 'map' && (
         <MaterialMap materials={materials} onBack={() => setView('materials')} onInfo={() => setDialog('mapInfo')} onOpen={openDetail} />

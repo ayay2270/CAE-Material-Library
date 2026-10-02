@@ -136,6 +136,13 @@ export const ColumnsIcon = (p: P) => (
   </Icon>
 );
 
+export const CalcIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="3" y="1.5" width="10" height="13" rx="1" />
+    <path d="M5.5 4.5h5M5.5 8h1M9.5 8h1M5.5 11h1M9.5 11h1" />
+  </Icon>
+);
+
 export function SortArrows({ dir }: { dir: 'asc' | 'desc' | null }) {
   return (
     <svg width="8" height="11" viewBox="0 0 8 11" aria-hidden="true" className="sort-arrows">
