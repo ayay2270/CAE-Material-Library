@@ -40,3 +40,15 @@ npm run build    # type-check + production build into dist/ (static, relative ba
 - ETAN 算法 page is a placeholder: add the formula in `src/lib/etan.ts` (`calcEtan`).
 - Deployment: GitHub Actions (`.github/workflows/pages.yml`) builds `dist/` and publishes it to GitHub Pages on every push to `main`.
 - Clearing site data removes the library; export CSV regularly.
+
+## UI concept gallery (exploration branch only)
+
+Five alternative UI/UX concepts that reuse the same data and logic (storage, units, sorting/filtering, 欄位設定, Material Map, compare, CSV).
+They do **not** change the production app and run on their own port, so their `localStorage` is separate from the app's.
+
+```bash
+npm run concepts          # http://127.0.0.1:5174/concepts/  (gallery; "/" redirects here)
+npm run concepts:build    # static build into concepts-dist/ (not part of the production build)
+```
+
+Concepts live in `src/concepts/` (A Ledger · B Explorer · C Quick-Find · D Workbench · E Atlas).

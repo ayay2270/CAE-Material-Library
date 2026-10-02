@@ -1,0 +1,77 @@
+/* Concept D — Workbench: dark engineering console. */
+.cx-d {
+  --bg: #0b1220; --surface: #111a2e; --head-bg: #16223a; --line: #223250; --line-strong: #33466b; --ink: #e6edf7; --ink-2: #aab8d0; --muted: #7d8dab;
+  --row-hover: #18274a; --navy: #243a66; --navy-hover: #2f4a80; --red: #ff5a4f;
+  --sc-grid: #1c2a46; --sc-grid-minor: #15213a; --sc-axis: #51658a; --sc-text: #9fb0cc; --sc-label: #e6edf7; --sc-label-halo: #0b1220; --sc-dot-stroke: #0b1220; --sc-legend-bg: rgba(17, 26, 46, .95); --sc-zone-text: #5ee3a0; --sc-zone-sub: #3fae7c; --sc-sel: #8fb4ff;
+  --bar: rgba(96, 165, 250, .28); color-scheme: dark;
+}
+.cx-d .sp { flex: 1; }
+.cx-d input, .cx-d select, .cx-d textarea { background: #0e1729 !important; color: var(--ink) !important; border-color: var(--line-strong) !important; }
+.cx-d .col-item, .cx-d .seg button, .cx-d .col-settings { background: var(--surface); color: var(--ink); }
+.cx-d .col-item:hover { background: var(--row-hover); }
+.cx-d .col-item.locked { background: var(--head-bg); }
+.cx-d .seg button.on { background: var(--navy); color: #fff; }
+.cx-d .btn:hover:not(:disabled) { background: var(--row-hover); }
+.cx-d .overlay { background: rgba(2, 6, 16, .6); }
+.cx-d .dialog { border: 1px solid var(--line-strong); }
+.cx-d .link-btn { color: #8fb4ff; }
+.cx-d .cat-tag { background: var(--head-bg); color: var(--ink-2); }
+.cx-d .prop-grid { border-color: var(--line); }
+.cx-d .etan-card input, .cx-d .etan-card select { background: #0e1729; }
+.cx-d .etan-note { color: #f4c76b; }
+.d-top { flex: none; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: #0e1729; border-bottom: 1px solid var(--line-strong); }
+.d-top img { height: 22px; }
+.d-top b { font-size: 13.5px; margin-right: 6px; }
+.d-top nav { display: flex; gap: 2px; margin-left: 8px; }
+.d-top button { height: 28px; padding: 0 12px; border: 1px solid transparent; background: none; color: var(--ink-2); border-radius: 5px; font-size: 12.5px; cursor: pointer; }
+.d-top button:hover { background: #18274a; color: #fff; }
+.d-top nav button.on { background: #243a66; color: #fff; font-weight: 600; }
+.d-top > button, .d-top .popover-anchor > button { border-color: var(--line-strong); }
+.d-top button.pri { background: #e2231a; border-color: #e2231a; color: #fff; font-weight: 600; }
+.d-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 292px minmax(0, 1fr) 420px; }
+.d-rail { display: flex; flex-direction: column; min-height: 0; background: #0e1729; border-right: 1px solid var(--line-strong); }
+.d-rail-head { padding: 10px 10px 6px; display: grid; gap: 7px; border-bottom: 1px solid var(--line); }
+.d-rail h3 { margin: 0; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.d-rail em, .d-bench h2 em { font-style: normal; background: #243a66; padding: 0 7px; border-radius: 9px; font-size: 11px; }
+.d-rail-head input { height: 30px; border: 1px solid var(--line-strong); border-radius: 15px; padding: 0 12px; font-size: 12.5px; }
+.d-cats { display: flex; flex-wrap: wrap; gap: 4px; }
+.d-cats button, .d-rail-act button { height: 22px; padding: 0 8px; border: 1px solid var(--line-strong); background: none; color: var(--ink-2); border-radius: 11px; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.d-cats button.on { background: #243a66; color: #fff; border-color: #3d5a99; }
+.d-rail-act { display: flex; gap: 6px; }
+.d-rail-act button { border-radius: 4px; }
+.d-rail-act button:disabled { opacity: .4; }
+.d-cands { list-style: none; margin: 0; padding: 0; flex: 1; overflow: auto; }
+.d-cands li { display: flex; align-items: center; border-bottom: 1px solid #16223a; position: relative; }
+.d-cands li label { flex: 1; min-width: 0; display: grid; grid-template-columns: auto auto 1fr; gap: 4px 7px; align-items: center; padding: 6px 10px; cursor: pointer; }
+.d-cands .nm { font-weight: 600; font-size: 13px; }
+.d-cands .mini { grid-column: 3; font-size: 10.5px; color: var(--muted); }
+.d-cands .mini + .mini { margin-top: -4px; }
+.d-cands li.in { background: #14264a; box-shadow: inset 3px 0 0 #60a5fa; }
+.d-cands li.hov { background: #1b2f58; }
+.d-cands .rowact { display: none; position: absolute; right: 6px; top: 6px; gap: 2px; background: #1b2f58; border-radius: 4px; padding: 1px; }
+.d-cands li:hover .rowact { display: inline-flex; }
+.d-cands .rowact button { background: none; border: 0; color: #9db8ee; font-size: 11px; cursor: pointer; padding: 2px 5px; }
+.d-cands .none { justify-content: center; padding: 20px; color: var(--muted); }
+.d-bench { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.d-bench-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.d-bench h2 { margin: 0; font-size: 16px; display: flex; gap: 8px; align-items: center; }
+.d-bench .tg { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.d-matrix { flex: 1; overflow: auto; padding: 12px 16px 50px; }
+.cx-d .cmp { --cmp-row: 36px; font-size: 13px; background: var(--surface); }
+.cx-d .cmp th, .cx-d .cmp td { border-color: var(--line); }
+.cx-d .cmp td.num { font-size: 13.5px; }
+.cx-d .cmp td.max .val { color: #7dd3fc; }
+.cx-d .cmp td.min .val { color: #fcd34d; }
+.cx-d .cmp .hov { background-color: #1b2f58; }
+.cx-d .h-action { background: var(--head-bg); color: var(--ink-2); }
+.d-map { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line-strong); background: #0e1729; padding: 10px 12px 12px; }
+.d-map-head { display: flex; align-items: baseline; gap: 8px; }
+.d-map-head span { color: var(--muted); font-size: 12px; }
+.d-map-head .info { margin-left: auto; background: none; border: 0; color: #8fb4ff; cursor: pointer; font-size: 16px; }
+.d-map-sub { margin: 4px 0 6px; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.d-map-plot { flex: 1; min-height: 0; border: 1px solid var(--line); background: var(--surface); }
+.d-map-hint { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
+.cx-d .sc-tip { background: #e6edf7; color: #0b1220; }
+.cx-d .sc-tip span { color: #475569; }
+.d-etan { flex: 1; overflow: auto; background: var(--bg); }
+.d-etan .page { background: transparent; }

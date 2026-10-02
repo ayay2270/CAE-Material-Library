@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "concepts": "vite --config vite.concepts.config.ts",
+    "concepts:build": "vite build --config vite.concepts.config.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

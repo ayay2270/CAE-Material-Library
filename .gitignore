@@ -11,3 +11,4 @@ Thumbs.db
 coverage/
 __pycache__/
 *.pyc
+concepts-dist/
