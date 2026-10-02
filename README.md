@@ -1,5 +1,9 @@
 # CAE 材料資料庫 (CAE Material Library)
 
+## Live Website
+
+[Open CAE Material Library](https://ayay2270.github.io/CAE-Material-Library/)
+
 A compact, spreadsheet-style CAE material data ledger for internal engineering use.
 Find a material → inspect its properties → verify the source → use the data in CAE.
 
@@ -10,6 +14,8 @@ UI language: Traditional Chinese. Property / column names (Material Name, Densit
 ## Run
 
 ```bash
+git clone https://github.com/ayay2270/CAE-Material-Library.git
+cd CAE-Material-Library
 npm install
 npm run dev      # http://127.0.0.1:5173
 npm run build    # type-check + production build into dist/ (static, relative base)
@@ -30,5 +36,7 @@ npm run build    # type-check + production build into dist/ (static, relative ba
 
 - Values are stored in the mm–t–N–s system (density t/mm³, stress MPa, elongation %).
 - Stored text (Source, Notes, history entries) is displayed exactly as saved — it is never auto-translated.
-- The "Lenovo" mark in the header is a text placeholder; replace it with the official asset.
+- The header logo is `src/assets/lenovo-logo.png`.
+- ETAN 算法 page is a placeholder: add the formula in `src/lib/etan.ts` (`calcEtan`).
+- Deployment: GitHub Actions (`.github/workflows/pages.yml`) builds `dist/` and publishes it to GitHub Pages on every push to `main`.
 - Clearing site data removes the library; export CSV regularly.

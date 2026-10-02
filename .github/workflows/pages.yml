@@ -1,9 +1,9 @@
 name: Deploy to GitHub Pages
 
-# Publishes the build of this feature branch for visual review. Does not touch main.
+# Builds the app and publishes it to GitHub Pages on every push to main (or when run manually).
 on:
   push:
-    branches: [claude/festive-mendel-pi5304]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
