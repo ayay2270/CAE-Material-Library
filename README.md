@@ -4,6 +4,15 @@ A compact CAE material data workspace for internal engineering use.
 
 Find a material → inspect its properties → verify the source → compare / map / use the data in CAE.
 
+## V2 Preview Website
+
+[Open the live V2 preview](https://ayay2270.github.io/CAE-Material-Library-V2-Preview/)
+
+Preview repository: [ayay2270/CAE-Material-Library-V2-Preview](https://github.com/ayay2270/CAE-Material-Library-V2-Preview)
+
+V2 is being evaluated before replacing production. This branch does not replace `main`;
+production still uses the original repository's `main` branch and existing Pages site.
+
 ---
 
 ## Current concept branch
@@ -35,9 +44,8 @@ The source code for V2 is stored in:
 
 `concepts/table-workspace-v2`
 
-GitHub does not automatically run a React/Vite app directly from a branch page, so this branch currently has **no separate permanent public website URL**.
-
-This is intentional: the existing GitHub Pages site is still the production site from `main`, and this V2 branch should not overwrite it while evaluation is ongoing.
+The current V2 snapshot is published at the separate [V2 preview website](https://ayay2270.github.io/CAE-Material-Library-V2-Preview/).
+The existing GitHub Pages site remains the production site from `main`; this preview does not overwrite it while evaluation is ongoing.
 
 ### Preview locally
 
@@ -70,7 +78,7 @@ Then open the forwarded **5173** port from the **Ports** panel.
 
 ### Permanent V2 preview
 
-The recommended deployment approach is to publish this branch to a separate preview repository / site so that:
+The V2 snapshot is deployed from the public [preview repository](https://github.com/ayay2270/CAE-Material-Library-V2-Preview) using GitHub Actions on its `main` branch, so that:
 
 - V2 can have its own public URL
 - `main` remains untouched
