@@ -29,6 +29,56 @@ The goal is to keep the fast data-scanning workflow of the original spreadsheet-
 
 ---
 
+## Preview this V2 branch
+
+The source code for V2 is stored in:
+
+`concepts/table-workspace-v2`
+
+GitHub does not automatically run a React/Vite app directly from a branch page, so this branch currently has **no separate permanent public website URL**.
+
+This is intentional: the existing GitHub Pages site is still the production site from `main`, and this V2 branch should not overwrite it while evaluation is ongoing.
+
+### Preview locally
+
+```bash
+git clone https://github.com/ayay2270/CAE-Material-Library.git
+cd CAE-Material-Library
+git checkout concepts/table-workspace-v2
+npm install
+npm run dev
+```
+
+Open the local URL shown by Vite, normally:
+
+`http://127.0.0.1:5173/`
+
+### Preview with GitHub Codespaces
+
+Open the V2 branch on GitHub, then choose:
+
+**Code → Codespaces → Create codespace on concepts/table-workspace-v2**
+
+In the Codespaces terminal run:
+
+```bash
+npm install
+npm run dev -- --host 0.0.0.0
+```
+
+Then open the forwarded **5173** port from the **Ports** panel.
+
+### Permanent V2 preview
+
+The recommended deployment approach is to publish this branch to a separate preview repository / site so that:
+
+- V2 can have its own public URL
+- `main` remains untouched
+- the current production GitHub Pages site remains unchanged
+- V2 can continue to evolve independently until it is ready to replace production
+
+---
+
 ## Production website
 
 [Open the current production CAE Material Library](https://ayay2270.github.io/CAE-Material-Library/)
