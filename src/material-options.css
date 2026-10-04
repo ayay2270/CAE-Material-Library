@@ -1,0 +1,159 @@
+.stress-strain-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.curve-toolbar,
+.curve-display-tools,
+.curve-file-actions,
+.curve-save-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.curve-toolbar label,
+.curve-display-tools label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.curve-toolbar select,
+.curve-display-tools select {
+  height: 31px;
+  max-width: 270px;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.curve-toolbar > .btn,
+.curve-display-tools > .btn {
+  margin-left: auto;
+  align-self: flex-end;
+  font-size: 11px;
+}
+.curve-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.curve-editor h3 {
+  font-size: 14px;
+}
+.curve-editor textarea {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.curve-editor .form-grid {
+  gap: 9px 12px;
+}
+.curve-editor .form-grid select {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+  padding-right: 3px;
+}
+.curve-editor .notice {
+  margin: 0;
+  font-size: 11px;
+}
+.curve-editor .notice ul {
+  padding-left: 18px;
+  margin: 5px 0 0;
+}
+.curve-valid {
+  font-size: 12px;
+  color: #087b60;
+}
+.full-curve .curve-line {
+  stroke: #2563eb;
+  stroke-width: 1.6;
+}
+.full-curve figcaption {
+  min-height: 32px;
+  line-height: 1.6;
+}
+.curve-save-actions {
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+.curve-meta {
+  margin-top: 5px;
+}
+.workspace-sidebar .sidebar-index-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.workspace-sidebar .sidebar-index-heading h2 {
+  margin: 0;
+}
+.workspace-sidebar button.index-manage-trigger {
+  min-height: 23px;
+  width: auto;
+  flex: none;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid #405168;
+  color: #b8c9df;
+  font-size: 10px;
+}
+.index-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 14px 0;
+  max-height: 45vh;
+  overflow: auto;
+}
+.index-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 12px;
+}
+.index-manager-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.index-manager-row > b {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.index-manager-row .btn {
+  flex: none;
+  height: 26px;
+}
+.index-manager-form {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.index-manager-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 550px) {
+  .curve-toolbar > .btn {
+    margin-left: 0;
+  }
+  .curve-editor .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-index-heading {
+    flex-wrap: wrap;
+  }
+}

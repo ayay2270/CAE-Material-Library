@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { Material } from '../types';
-import { CATEGORY_LABEL } from '../types';
+import type { Material, StressStrainData } from '../types';
+import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
 import { formatDateLong, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
 import { Modal } from './Modal';
-import { StressStrainCurve } from './StressStrainCurve';
+import { StressStrainSection } from './StressStrainSection';
 import { EditIcon, TrashIcon } from './icons';
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSaveCurve: (data: StressStrainData) => string | null;
 }
 
 type Tab = 'props' | 'curve' | 'source' | 'history';
@@ -26,7 +27,8 @@ const TABS: { id: Tab; label: string }[] = [
 
 const ACTION_LABEL = { created: '建立', edited: '編輯', imported: '匯入' } as const;
 
-export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete }: Props) {
+export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve }: Props) {
+  const indexes = useIndexes();
   const [tab, setTab] = useState<Tab>('props');
 
   return (
@@ -36,7 +38,7 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete }
       onClose={onClose}
       title={
         <span className="drawer-title">
-          {m.name} <span className="cat-tag">{CATEGORY_LABEL[m.category]}</span>
+          {m.name} <span className="cat-tag">{indexes.label(m.category)}</span>
         </span>
       }
       footer={
@@ -81,7 +83,7 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete }
           </dl>
         )}
 
-        {tab === 'curve' && <StressStrainCurve m={m} />}
+        {tab === 'curve' && <StressStrainSection key={m.id} material={m} units={units} onSave={onSaveCurve} />}
 
         {tab === 'source' && (
           <dl className="meta-grid">

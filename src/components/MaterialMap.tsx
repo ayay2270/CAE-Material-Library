@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Category, Material } from '../types';
-import { CATEGORIES, CATEGORY_LABEL } from '../types';
+import { useIndexes } from '../lib/indexes';
 import { ArrowLeftIcon, InfoIcon } from './icons';
 
 export const CATEGORY_COLOR: Record<Category, string> = {
@@ -156,6 +156,7 @@ function placeLabels(pts: Pt[], bounds: { l: number; r: number; t: number; b: nu
 }
 
 export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
+  const indexes = useIndexes();
   const [hoverId, setHoverId] = useState<string | null>(null);
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -191,7 +192,7 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
 
   const active = plottable.find((m) => m.id === hoverId) ?? null;
   const activePt = geom?.pts.find((p) => p.m.id === hoverId) ?? null;
-  const used = CATEGORIES.filter((c) => plottable.some((m) => m.category === c));
+  const used = indexes.categories.map(c => c.id).filter((c) => plottable.some((m) => m.category === c));
 
   return (
     <main className="page map-page">
@@ -265,7 +266,7 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
                     data-name={m.name}
                   >
                     {lab?.leader && <line x1={lab.leader.x1} y1={lab.leader.y1} x2={lab.leader.x2} y2={lab.leader.y2} className="leader" />}
-                    <circle cx={cx} cy={cy} r={6} fill={CATEGORY_COLOR[m.category]} className="pt-dot" />
+                    <circle cx={cx} cy={cy} r={6} fill={indexes.color(m.category)} className="pt-dot" />
                     {lab && (
                       <text x={lab.x} y={lab.y} textAnchor={lab.anchor} className="pt-text">{m.name}</text>
                     )}
@@ -276,7 +277,7 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
               {activePt && active && (
                 <g pointerEvents="none">
                   <circle cx={activePt.cx} cy={activePt.cy} r={11} className="pt-ring" />
-                  <circle cx={activePt.cx} cy={activePt.cy} r={6} fill={CATEGORY_COLOR[active.category]} className="pt-dot" />
+                  <circle cx={activePt.cx} cy={activePt.cy} r={6} fill={indexes.color(active.category)} className="pt-dot" />
                 </g>
               )}
 
@@ -290,7 +291,7 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
                 >
                   <div className="map-tip">
                     <b>{active.name}</b>
-                    <span>{CATEGORY_LABEL[active.category]} · 點擊查看詳細資料</span>
+                    <span>{indexes.label(active.category)} · 點擊查看詳細資料</span>
                     <div>Density <i>{active.density!.toExponential(2).replace('e-', 'E-')}</i> t/mm³</div>
                     <div>Young's Modulus <i>{active.youngsModulus!.toLocaleString('en-US')}</i> MPa</div>
                   </div>
@@ -301,7 +302,7 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
             <ul className="map-legend" aria-label="材料類別圖例">
               {used.map((c) => (
                 <li key={c}>
-                  <i style={{ background: CATEGORY_COLOR[c] }} /> {CATEGORY_LABEL[c]}
+                  <i style={{ background: indexes.color(c) }} /> {indexes.label(c)}
                 </li>
               ))}
             </ul>

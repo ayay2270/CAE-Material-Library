@@ -153,6 +153,27 @@ Materials are grouped by category and keep the same underlying:
 
 It is intended for visual browsing rather than replacing the dense table workflow.
 
+### 材料分類與 Source 管理
+
+Click **編輯** beside either sidebar index to add an item or edit its name.
+New items remain available with a count of 0 until assigned to a material.
+Category names update throughout the table, cards, filters, comparison and map;
+their stored category IDs remain stable. Renaming a Source updates all materials
+using it and records that change in their history. Material forms offer every
+registered category and Source.
+
+### 完整 Stress–strain curve
+
+Open a material's **Detail → 材料曲線 → 加入完整曲線** to paste Strain / Stress
+points or import a two-column CSV/TSV file. Select the input units (mm/mm or %;
+MPa or GPa), curve definition and strain definition, inspect the preview, then save.
+Stored curves can be edited and exported as CSV. All points and their original
+order are retained, including softening, unloading and negative values.
+Invalid rows block saving. Curves do not alter material properties or ETAN logic.
+The original curve calculated from material properties remains available as a
+separate option. Material CSV backups include the full curve and metadata in
+the **Stress-Strain Curve JSON** column; older CSV files preserve existing curves.
+
 ---
 
 ## Other functions
@@ -179,6 +200,11 @@ It is intended for visual browsing rather than replacing the dense table workflo
   - `cae-material-library:v1`
 - Column order / visibility preferences are stored under:
   - `cae-material-library:columns:v1`
+- Category / Source indexes are stored under:
+  - `cae-material-library:indexes:v1`
+
+CSV backs up material values and curve data. Index display names and unused
+index items are local preferences and are not included in material CSV exports.
 
 Clearing browser site data removes local material data, so export CSV regularly when using the tool for real work.
 

@@ -15,6 +15,8 @@ import { MaterialCards } from './components/MaterialCards';
 import type { LibraryMode } from './components/Toolbar';
 import { MaterialTable } from './components/MaterialTable';
 import { MaterialDrawer } from './components/MaterialDrawer';
+import { IndexContext, type IndexKind } from './lib/indexes';
+import { IndexManager } from './components/IndexManager';
 import { MaterialForm } from './components/MaterialForm';
 import { ComparePage } from './components/ComparePage';
 import { MaterialMap } from './components/MaterialMap';
@@ -29,9 +31,14 @@ import {
 type Dialog = 'help' | 'io' | 'mapInfo' | null;
 
 export function App() {
-  const { materials, add, update, remove, importMany, resetToSamples } =
+  const { materials, add, update, remove, importMany, resetToSamples, setCurve, indexes, editIndex } =
     useMaterials();
 
+  const [indexManager, setIndexManager] = useState<IndexKind | null>(null);
+  const categoryLabels = useMemo(
+    () => Object.fromEntries(indexes.categories.map(c => [c.id, c.label])),
+    [indexes.categories],
+  );
   const [view, setView] = useState<View>('materials');
   const [libraryMode, setLibraryMode] = useState<LibraryMode>('table');
   const [query, setQuery] = useState('');
@@ -90,10 +97,10 @@ export function App() {
         (filters.category === 'all' || m.category === filters.category) &&
         (filters.source === 'all' || m.source === filters.source) &&
         matchesUpdated(m, filters.updated) &&
-        matchesQuery(m, query),
+        matchesQuery(m, query, categoryLabels),
     );
     return sortMaterials(filtered, sort);
-  }, [materials, filters, query, sort]);
+  }, [materials, filters, query, sort, categoryLabels]);
 
   const detail = materials.find((m) => m.id === detailId) ?? null;
 
@@ -133,6 +140,7 @@ export function App() {
   const navigate = (v: View) => setView(v);
 
   return (
+    <IndexContext.Provider value={indexes}>
     <div className="app">
       <Header
         onHelp={() => setDialog('help')}
@@ -146,6 +154,7 @@ export function App() {
           filters={filters}
           onFilters={setFilters}
           selectedCount={selected.length}
+          onManage={setIndexManager}
         />
         <div className="workspace-content">
           {view === 'materials' && (
@@ -246,6 +255,11 @@ export function App() {
           onClose={() => setDetailId(null)}
           onEdit={() => setEditing(detail)}
           onDelete={() => setDeleting(detail)}
+          onSaveCurve={(data) => {
+            const error = setCurve(detail.id, data);
+            if (!error) setNotice(`已儲存 ${detail.name} 的完整 Stress–strain curve。`);
+            return error;
+          }}
         />
       )}
       {editing && (
@@ -262,6 +276,20 @@ export function App() {
           material={deleting}
           onConfirm={confirmDelete}
           onClose={() => setDeleting(null)}
+        />
+      )}
+      {indexManager && (
+        <IndexManager
+          kind={indexManager}
+          materials={materials}
+          onClose={() => setIndexManager(null)}
+          onSave={(id, name) => {
+            const error = editIndex(indexManager, id, name);
+            if (!error && indexManager === 'source' && id !== null && filters.source === id) {
+              setFilters({ ...filters, source: name.trim() });
+            }
+            return error;
+          }}
         />
       )}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
@@ -287,5 +315,6 @@ export function App() {
         </div>
       )}
     </div>
+    </IndexContext.Provider>
   );
 }

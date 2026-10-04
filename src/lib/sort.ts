@@ -31,10 +31,11 @@ export function sortMaterials(list: Material[], sort: SortState): Material[] {
   });
 }
 
-export function matchesQuery(m: Material, q: string): boolean {
+export function matchesQuery(m: Material, q: string, labels: Record<string,string> = CATEGORY_LABEL): boolean {
   const s = q.trim().toLowerCase();
   if (!s) return true;
-  return [m.name, m.source, m.notes, m.category, CATEGORY_LABEL[m.category]].some((f) => f.toLowerCase().includes(s));
+  const label = typeof labels[m.category] === 'string' ? labels[m.category] : m.category;
+  return [m.name, m.source, m.notes, m.category, label].some((f) => f.toLowerCase().includes(s));
 }
 
 export type UpdatedFilter = 'all' | 'today' | '7d' | '30d' | '90d';

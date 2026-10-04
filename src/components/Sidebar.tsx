@@ -1,6 +1,7 @@
-import { CATEGORIES, CATEGORY_LABEL, type Material, type View } from '../types';
+import type { Material, View } from '../types';
+import { useIndexes, type IndexKind } from '../lib/indexes';
 import type { Filters } from './Toolbar';
-import { CalcIcon, CompareIcon, GridIcon, MapIcon } from './icons';
+import { CalcIcon, CompareIcon, GridIcon, MapIcon, EditIcon } from './icons';
 
 interface Props {
   materials: Material[];
@@ -9,6 +10,7 @@ interface Props {
   filters: Filters;
   onFilters: (filters: Filters) => void;
   selectedCount: number;
+  onManage: (kind: IndexKind) => void;
 }
 export function Sidebar({
   materials,
@@ -16,11 +18,10 @@ export function Sidebar({
   onNavigate,
   filters,
   onFilters,
-  selectedCount,
+  selectedCount, onManage,
 }: Props) {
-  const sources = [
-    ...new Set(materials.map((m) => m.source).filter(Boolean)),
-  ].sort((a, b) => a.localeCompare(b));
+  const indexes = useIndexes();
+  const sources = indexes.sources;
   const filter = (change: Partial<Filters>) => {
     onFilters({ ...filters, ...change });
     onNavigate('materials');
@@ -53,7 +54,7 @@ export function Sidebar({
         ))}
       </nav>
       <nav className="sidebar-categories" aria-label="材料分類">
-        <h2>材料分類</h2>
+        <div className="sidebar-index-heading"><h2>材料分類</h2><button className="index-manage-trigger" aria-label="管理材料分類" onClick={() => onManage('category')}><EditIcon size={12}/> 編輯</button></div>
         <button
           className={filters.category === 'all' ? 'active' : ''}
           aria-pressed={filters.category === 'all'}
@@ -63,7 +64,7 @@ export function Sidebar({
           <span>全部材料</span>
           <b>{materials.length}</b>
         </button>
-        {CATEGORIES.map((category) => (
+        {indexes.categories.map(({id:category,label,color}) => (
           <button
             key={category}
             className={filters.category === category ? 'active' : ''}
@@ -71,18 +72,16 @@ export function Sidebar({
             onClick={() => filter({ category })}
           >
             <i
-              className={`category-dot category-${category}`}
+              className="category-dot" style={{background:color}}
               aria-hidden="true"
             />
-            <span>{CATEGORY_LABEL[category]}</span>
+            <span>{label}</span>
             <b>{materials.filter((m) => m.category === category).length}</b>
           </button>
         ))}
       </nav>
       <nav className="sidebar-sources" aria-label="Source 來源索引">
-        <h2>
-          SOURCE <span>/ 來源索引</span>
-        </h2>
+        <div className="sidebar-index-heading"><h2>SOURCE <span>/ 來源索引</span></h2><button className="index-manage-trigger" aria-label="管理 SOURCE" onClick={() => onManage('source')}><EditIcon size={12}/> 編輯</button></div>
         <button
           className={filters.source === 'all' ? 'active' : ''}
           aria-pressed={filters.source === 'all'}

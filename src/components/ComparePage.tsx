@@ -1,5 +1,5 @@
 import type { Material } from '../types';
-import { CATEGORY_LABEL } from '../types';
+import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
 import { formatDateLong, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export function ComparePage({ materials, selected, units, onToggle, onClear, onBack, onOpen }: Props) {
+  const indexes = useIndexes();
   const picked = selected.map((id) => materials.find((m) => m.id === id)).filter((m): m is Material => !!m);
 
   return (
@@ -72,7 +73,7 @@ export function ComparePage({ materials, selected, units, onToggle, onClear, onB
                 <tr>
                   <td className="prop-col">Category</td>
                   {picked.map((m) => (
-                    <td key={m.id} className="num txt">{CATEGORY_LABEL[m.category]}</td>
+                    <td key={m.id} className="num txt">{indexes.label(m.category)}</td>
                   ))}
                 </tr>
                 {PROPS.map((p) => {

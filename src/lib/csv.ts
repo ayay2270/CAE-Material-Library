@@ -1,6 +1,7 @@
 import { CATEGORIES } from '../types';
 import type { Category, Material, MaterialInput } from '../types';
 import { PROPS } from './props';
+import { isStressStrainData } from './curveData';
 
 // Export always uses base units (t/mm³, MPa, %) regardless of display prefs.
 const HEADERS = [
@@ -10,6 +11,7 @@ const HEADERS = [
   'Source',
   'Notes',
   'Last Updated',
+  'Stress-Strain Curve JSON',
 ];
 
 function esc(v: string): string {
@@ -27,6 +29,7 @@ export function toCsv(list: Material[]): string {
         m.source,
         m.notes,
         m.updatedAt,
+        m.stressStrainCurve ? JSON.stringify(m.stressStrainCurve) : '',
       ]
         .map(esc)
         .join(','),
@@ -98,6 +101,7 @@ export function csvToMaterials(text: string): ImportResult {
   const catIdx = col('category');
   const srcIdx = col('source');
   const notesIdx = col('notes');
+  const curveIdx = col('stress-strain curve json');
   const propIdx = PROPS.map((p) => col(p.label.toLowerCase()));
 
   const rows: MaterialInput[] = [];
@@ -109,10 +113,7 @@ export function csvToMaterials(text: string): ImportResult {
       return;
     }
     const rawCat = (r[catIdx] ?? '').trim();
-    const category = (CATEGORIES.find((c) => c.toLowerCase() === rawCat.toLowerCase()) ?? 'Others') as Category;
-    if (rawCat && category === 'Others' && rawCat.toLowerCase() !== 'others') {
-      errors.push(`第 ${line} 行：未知的 Category「${rawCat}」，已設為 Others。`);
-    }
+    const category = (CATEGORIES.find((c) => c.toLowerCase() === rawCat.toLowerCase()) ?? (rawCat || 'Others')) as Category;
     const m: MaterialInput = {
       name,
       category,
@@ -133,6 +134,16 @@ export function csvToMaterials(text: string): ImportResult {
       if (Number.isFinite(n)) m[p.key] = n;
       else errors.push(`第 ${line} 行：${p.label} 的「${raw}」不是數字，已留空。`);
     });
+    if (curveIdx >= 0 && r[curveIdx]?.trim()) {
+      try {
+        const curve = JSON.parse(r[curveIdx]);
+        if (!isStressStrainData(curve)) throw new Error('invalid curve');
+        m.stressStrainCurve = curve;
+      } catch {
+        errors.push(`第 ${line} 行：Stress-Strain Curve JSON 無效，整列已略過以保護原資料。`);
+        return;
+      }
+    }
     rows.push(m);
   });
   return { rows, errors };

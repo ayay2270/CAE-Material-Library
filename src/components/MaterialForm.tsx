@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CATEGORIES, CATEGORY_LABEL } from '../types';
+import { useIndexes } from '../lib/indexes';
 import type { Category, Material, MaterialInput } from '../types';
 import { PROPS } from '../lib/props';
 import { Modal } from './Modal';
@@ -24,6 +24,7 @@ const RULES: Partial<Record<(typeof PROPS)[number]['key'], { min?: number; max?:
 const toText = (v: number | null) => (v === null ? '' : String(v));
 
 export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
+  const indexes = useIndexes();
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState<Category>(initial?.category ?? 'Metal');
   const [source, setSource] = useState(initial?.source ?? '');
@@ -108,8 +109,8 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
           <label>
             <span>Category</span>
             <select value={category} onChange={(e) => setCategory(e.target.value as Category)}>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
+              {indexes.categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.label}</option>
               ))}
             </select>
           </label>
@@ -138,7 +139,8 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
 
         <label>
           <span>Source</span>
-          <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="例如：供應商資料表、網路、提供者姓名" />
+          <input list="material-source-options" value={source} onChange={(e) => setSource(e.target.value)} placeholder="例如：供應商資料表、網路、提供者姓名" />
+          <datalist id="material-source-options">{indexes.sources.map(s => <option key={s} value={s}/>)}</datalist>
         </label>
         <label>
           <span>備註</span>

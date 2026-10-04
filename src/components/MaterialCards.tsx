@@ -1,11 +1,11 @@
 import {
-  CATEGORIES,
-  CATEGORY_LABEL,
   type Material,
   type Category,
 } from '../types';
 import { formatDay, formatValue, unitFor, type UnitPrefs } from '../lib/format';
 import { PROPS } from '../lib/props';
+import { useIndexes } from '../lib/indexes';
+import type { CSSProperties } from 'react';
 
 const english: Record<Category, string> = {
   Metal: 'Metal',
@@ -32,6 +32,7 @@ export function MaterialCards({
   units,
   activeId,
 }: Props) {
+  const indexes = useIndexes();
   const fields = [
     'density',
     'yieldStress',
@@ -51,7 +52,8 @@ export function MaterialCards({
   return (
     <div className="material-cards-scroll">
       <div className="material-card-groups">
-        {CATEGORIES.map((category) => {
+        {indexes.categories.map(({id:category,label,color}) => {
+          const englishName = Object.keys(english).includes(category) ? english[category] : '';
           const group = rows.filter(
             (material) => material.category === category,
           );
@@ -59,11 +61,12 @@ export function MaterialCards({
             group.length > 0 && (
               <section
                 key={category}
-                className={`material-card-group group-${category}`}
+                className={`material-card-group group-${englishName ? category : 'custom'}`}
+                style={{'--cat':color} as CSSProperties}
               >
                 <h2>
-                  <b>{CATEGORY_LABEL[category]}</b>
-                  <span>{english[category]}</span>
+                  <b>{label}</b>
+                  <span>{englishName}</span>
                   <i>{group.length}</i>
                 </h2>
                 <div className="material-card-grid">

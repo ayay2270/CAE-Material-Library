@@ -1,7 +1,5 @@
 import { forwardRef, type ReactNode } from 'react';
 import {
-  CATEGORIES,
-  CATEGORY_LABEL,
   type Category,
   type Material,
 } from '../types';
@@ -13,6 +11,7 @@ import {
 } from '../lib/sort';
 import type { UnitPrefs } from '../lib/format';
 import { COLUMNS } from '../lib/columns';
+import { useIndexes } from '../lib/indexes';
 import {
   ColumnsIcon,
   CompareIcon,
@@ -48,9 +47,8 @@ interface Props {
 }
 export const Toolbar = forwardRef<HTMLInputElement, Props>(
   function Toolbar(p, searchRef) {
-    const sources = [
-      ...new Set(p.materials.map((m) => m.source).filter(Boolean)),
-    ].sort((a, b) => a.localeCompare(b));
+    const indexes = useIndexes();
+    const sources = indexes.sources;
     const count = (category: Category) =>
       p.materials.filter((m) => m.category === category).length;
     return (
@@ -125,7 +123,7 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
               <i className="category-dot category-all" aria-hidden="true" />
               全部 <span>{p.materials.length}</span>
             </button>
-            {CATEGORIES.map((category) => (
+            {indexes.categories.map(({id:category,label,color}) => (
               <button
                 key={category}
                 className={p.filters.category === category ? 'active' : ''}
@@ -133,10 +131,10 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
                 onClick={() => p.onFilters({ ...p.filters, category })}
               >
                 <i
-                  className={`category-dot category-${category}`}
+                  className="category-dot" style={{background:color}}
                   aria-hidden="true"
                 />
-                {CATEGORY_LABEL[category]} <span>{count(category)}</span>
+                {label} <span>{count(category)}</span>
               </button>
             ))}
           </div>
@@ -181,7 +179,7 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
           <h2>
             {p.filters.category === 'all'
               ? '全部材料'
-              : CATEGORY_LABEL[p.filters.category]}{' '}
+              : indexes.label(p.filters.category)}{' '}
             <span>{p.visibleCount}</span>
           </h2>
           {(p.filters.category !== 'all' ||

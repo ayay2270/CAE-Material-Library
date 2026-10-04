@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { seedMaterials } from '../data/seed';
 import { PROPS } from './props';
 import { formatValue } from './format';
-import type { HistoryEntry, Material, MaterialInput } from '../types';
+import type { HistoryEntry, Material, MaterialInput, StressStrainData } from '../types';
+import { isStressStrainData } from './curveData';
+import { changeIndex, deriveIndexes, INDEX_KEY, loadIndexes, persistTogether, type IndexKind } from './indexes';
 
 // Versioned key so a future schema change can migrate instead of clobber.
 const KEY = 'cae-material-library:v1';
@@ -48,6 +50,7 @@ function describeChanges(before: Material, after: MaterialInput): string {
   }
   if (before.source !== after.source) changes.push('Source');
   if (before.notes !== after.notes) changes.push('備註');
+  if (after.stressStrainCurve !== undefined && JSON.stringify(before.stressStrainCurve ?? null) !== JSON.stringify(after.stressStrainCurve)) changes.push('Stress–strain curve');
   return changes.length ? changes.join('; ') : NO_CHANGES;
 }
 
@@ -55,6 +58,10 @@ export function useMaterials() {
   const [materials, setMaterials] = useState<Material[]>(load);
   const latest = useRef(materials);
   latest.current = materials;
+  const [savedIndexes, setSavedIndexes] = useState(loadIndexes);
+  const latestIndexes = useRef(savedIndexes);
+  latestIndexes.current = savedIndexes;
+  const indexes = useMemo(() => deriveIndexes(materials, savedIndexes), [materials, savedIndexes]);
 
   useEffect(() => save(materials), [materials]);
 
@@ -83,6 +90,26 @@ export function useMaterials() {
 
   const remove = useCallback((id: string) => {
     setMaterials((list) => list.filter((m) => m.id !== id));
+  }, []);
+
+  const setCurve = useCallback((id: string, curve: StressStrainData): string | null => {
+    if (!isStressStrainData(curve)) return '曲線資料無效，未儲存。';
+    const current = latest.current;
+    if (!current.some(m => m.id === id)) return '材料已不存在，未儲存。';
+    const now = new Date().toISOString();
+    const next = current.map(m => m.id !== id ? m : {
+      ...m, stressStrainCurve: curve, updatedAt: now,
+      history: [{ at: now, action: 'edited' as const, summary: `Stress–strain curve：${curve.points.length} 個完整資料點` }, ...m.history],
+    });
+    try {
+      // Report quota/storage failures before changing state or claiming success.
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {
+      return '瀏覽器儲存空間不足或無法使用，曲線未儲存。請先匯出備份或減少其他儲存資料。';
+    }
+    latest.current = next;
+    setMaterials(next);
+    return null;
   }, []);
 
   /** Adds imported rows; a row whose name already exists updates that record. */
@@ -126,5 +153,23 @@ export function useMaterials() {
 
   const resetToSamples = useCallback(() => setMaterials(seedMaterials()), []);
 
-  return { materials, add, update, remove, importMany, resetToSamples };
+  const editIndex = useCallback((kind: IndexKind, id: string | null, name: string): string | null => {
+    const current = latest.current;
+    const result = changeIndex(deriveIndexes(current,latestIndexes.current),kind,id,name);
+    if (!result.next) return result.error ?? '無法儲存索引。';
+    const now = new Date().toISOString();
+    const nextMaterials = kind === 'source' && id !== null && id !== name.trim()
+      ? current.map(m => m.source !== id ? m : {...m,source:name.trim(),updatedAt:now,history:[{at:now,action:'edited' as const,summary:`Source：${id} → ${name.trim()}（來源索引重新命名）`},...m.history]})
+      : current;
+    const entries: [string,string][] = [[INDEX_KEY,JSON.stringify(result.next)]];
+    if (nextMaterials !== current) entries.push([KEY,JSON.stringify(nextMaterials)]);
+    if (!persistTogether(entries)) return '瀏覽器儲存失敗，索引與材料未變更。請檢查儲存空間。';
+    latestIndexes.current = result.next;
+    latest.current = nextMaterials;
+    setSavedIndexes(result.next);
+    if (nextMaterials !== current) setMaterials(nextMaterials);
+    return null;
+  }, []);
+
+  return { materials, add, update, remove, importMany, resetToSamples, setCurve, indexes, editIndex };
 }

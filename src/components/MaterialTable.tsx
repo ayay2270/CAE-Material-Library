@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Material } from '../types';
-import { CATEGORY_LABEL } from '../types';
+import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
 import { formatDay, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
@@ -28,6 +28,7 @@ interface Props {
 const propDef = (id: ColId) => PROPS.find((p) => p.key === id);
 
 export function MaterialTable(p: Props) {
+  const indexes = useIndexes();
   const selectAll = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (selectAll.current) selectAll.current.indeterminate = p.selected.length > 0;
@@ -69,7 +70,7 @@ export function MaterialTable(p: Props) {
       case 'name':
         return <td key={id} className="col-name sticky s2">{m.name}</td>;
       case 'category':
-        return <td key={id} className="col-category"><span className="table-category"><i className={`category-dot category-${m.category}`} aria-hidden="true" />{CATEGORY_LABEL[m.category]}</span></td>;
+        return <td key={id} className="col-category"><span className="table-category"><i className="category-dot" style={{background:indexes.color(m.category)}} aria-hidden="true" />{indexes.label(m.category)}</span></td>;
       case 'source':
         return (
           <td key={id} className="col-source" title={m.source}>

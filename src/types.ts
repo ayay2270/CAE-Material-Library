@@ -1,5 +1,5 @@
 export const CATEGORIES = ['Metal', 'Plastic', 'Composite', 'Elastomer', 'Others'] as const;
-export type Category = (typeof CATEGORIES)[number];
+export type Category = string;
 
 /** Traditional Chinese UI label for each stored category value (stored values are unchanged). */
 export const CATEGORY_LABEL: Record<Category, string> = {
@@ -25,6 +25,15 @@ export interface HistoryEntry {
   summary: string;
 }
 
+export interface StressStrainData {
+  /** All supplied points, in their original order; base units mm/mm and MPa. */
+  points: { strain: number; stress: number }[];
+  definition: 'engineering' | 'true' | 'unspecified';
+  strainKind: 'total' | 'plastic' | 'unspecified';
+  source: string;
+  notes: string;
+}
+
 export interface Material {
   id: string;
   name: string;
@@ -40,6 +49,8 @@ export interface Material {
   notes: string;
   updatedAt: string; // ISO timestamp
   history: HistoryEntry[];
+  /** Optional for backward compatibility with existing records and CSV files. */
+  stressStrainCurve?: StressStrainData | null;
 }
 
 export type MaterialInput = Omit<Material, 'id' | 'updatedAt' | 'history'>;
