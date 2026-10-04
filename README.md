@@ -1,54 +1,183 @@
 # CAE 材料資料庫 (CAE Material Library)
 
-## Table + Card workspace concept
+A compact CAE material data workspace for internal engineering use.
 
-This branch, `concepts/table-workspace-v2`, implements the selected workspace sketch.
-The Material Library opens in **Table View by default**; **Card View** is a secondary,
-category-grouped browsing mode. The dark sidebar provides workspace navigation and
-live category/source indexes. Sidebar filters and category chips share the same state;
-both views reuse the existing material data, selection, sorting, and display units.
+Find a material → inspect its properties → verify the source → compare / map / use the data in CAE.
 
-The production website below continues to use `main`. This concept branch does not
-change the GitHub Pages deployment workflow or the stored engineering values.
+---
 
-## Live Website
+## Current concept branch
 
-[Open CAE Material Library](https://ayay2270.github.io/CAE-Material-Library/)
+**Branch:** `concepts/table-workspace-v2`
 
-A compact, spreadsheet-style CAE material data ledger for internal engineering use.
-Find a material → inspect its properties → verify the source → use the data in CAE.
+[Open this branch on GitHub](https://github.com/ayay2270/CAE-Material-Library/tree/concepts/table-workspace-v2)
 
-Stack: React + TypeScript + Vite. No backend; data is kept in the browser's `localStorage`
-(`cae-material-library:v1`) and seeded with 11 sample materials on first load.
-UI language: Traditional Chinese. Property / column names (Material Name, Density, Young's Modulus, …) stay English.
+This branch implements the selected **Table-first Engineering Workspace** concept.
 
-## Run
+The design combines:
+
+- a dark left engineering-workspace sidebar
+- live Material Category / Source indexes
+- a dense engineering data table as the **default Material Library view**
+- a grouped **Card View** as a secondary browsing mode
+- shared filtering between sidebar navigation, category chips, search, Source, and Updated Time controls
+
+The goal is to keep the fast data-scanning workflow of the original spreadsheet-style Material Library while improving navigation, hierarchy, and category visibility.
+
+> This branch is a concept implementation only.  
+> It does **not** replace `main` and does **not** change the current production GitHub Pages deployment.
+
+---
+
+## Production website
+
+[Open the current production CAE Material Library](https://ayay2270.github.io/CAE-Material-Library/)
+
+Production continues to deploy from **`main`**.
+
+The GitHub Pages workflow remains unchanged and publishes only from the production branch configuration.
+
+---
+
+## Main workspace
+
+### 材料庫
+
+The Material Library opens in **Table View by default**.
+
+The workspace includes:
+
+- Material search
+- Material Category filtering
+- Source filtering
+- Updated Time filtering
+- live Category counts
+- live Source counts
+- Table / Card view switching
+- sortable engineering-property columns
+- compact category color indicators
+- selectable materials
+- add / edit / delete material workflows
+- material detail drawer
+- missing-value display
+- Density / Stress unit display controls
+
+### Table View
+
+The primary view is optimized for engineering data scanning.
+
+Typical properties include:
+
+- Material Name
+- Category
+- Density
+- Young's Modulus
+- Poisson's Ratio
+- Yield Stress
+- ETAN
+- Ultimate Stress
+- Elongation
+- Source
+- Updated
+
+The table preserves the existing column visibility, reordering, unit handling, sorting, selection, and material-detail behavior.
+
+### Card View
+
+Card View is a secondary browsing mode.
+
+Materials are grouped by category and keep the same underlying:
+
+- material data
+- current filters
+- selection state
+- display units
+
+It is intended for visual browsing rather than replacing the dense table workflow.
+
+---
+
+## Other functions
+
+- **材料比較**: select 2 or more materials and compare properties. No fixed upper comparison limit; the comparison table can scroll horizontally.
+- **Material Map**: simplified Density × Young's Modulus (ρ–E) material map with reading guidance.
+- **ETAN 計算**: current placeholder implementation is preserved. This UI concept does not introduce or alter the ETAN engineering formula.
+- **欄位設定**: reorder fields, show / hide fields, restore defaults, and configure Density / Stress display units.
+- **匯入 / 匯出**: CSV export and CSV import matched by Material Name.
+- **Material Detail**: basic properties, curve information, Source / Notes, history, edit, and delete.
+
+---
+
+## Data and engineering behavior
+
+- Values use the **mm–t–N–s** system.
+- Density is stored in **t/mm³**.
+- Stress values are stored in **MPa**.
+- Elongation is stored in **%**.
+- Existing engineering values and material meanings are unchanged in this concept branch.
+- Stored text such as Source, Notes, and history entries is displayed exactly as saved.
+- Seed data contains 11 example materials on first load.
+- Material data is currently stored in browser `localStorage` under:
+  - `cae-material-library:v1`
+- Column order / visibility preferences are stored under:
+  - `cae-material-library:columns:v1`
+
+Clearing browser site data removes local material data, so export CSV regularly when using the tool for real work.
+
+---
+
+## Tech stack
+
+- React
+- TypeScript
+- Vite
+- Browser localStorage
+- GitHub Pages for production deployment
+
+UI language is primarily **Traditional Chinese**.
+
+Engineering property / column names such as `Material Name`, `Density`, `Young's Modulus`, etc. remain in English.
+
+The Lenovo header logo is stored at:
+
+`src/assets/lenovo-logo.png`
+
+---
+
+## Run locally
 
 ```bash
 git clone https://github.com/ayay2270/CAE-Material-Library.git
 cd CAE-Material-Library
+
+git checkout concepts/table-workspace-v2
+
 npm install
-npm run dev      # http://127.0.0.1:5173
-npm run build    # type-check + production build into dist/ (static, relative base)
+npm run dev
 ```
 
-## Features
+Build check:
 
-- **材料庫**: default dense table with secondary grouped cards, one search box, sidebar/chip filters
-  (材料類別 / 來源 / 更新時間), sortable columns,
-  sticky header / Material Name / Actions, missing values shown as hatched `—`.
-- **欄位設定**: drag (or ▲▼ buttons) to reorder columns, tick to show / hide, 還原預設. Material Name is pinned.
-  Order and visibility are saved in `localStorage` (`cae-material-library:columns:v1`). Density / stress display units are available here and above the library.
-- **材料比較**: tick 2 or more rows → 比較材料. No upper limit; the table scrolls horizontally.
-- **材料地圖**: one simplified Density × Young's Modulus (ρ–E) scatter with an ⓘ reading guide.
-- Row click opens a detail drawer (基本性質 / 材料曲線 / 來源與備註 / 歷史記錄) with edit and delete.
-- 匯入 / 匯出: CSV export (all or current list) and CSV import (matched by Material Name).
+```bash
+npm run build
+```
 
-## Notes
+The production build is generated into `dist/`.
 
-- Values are stored in the mm–t–N–s system (density t/mm³, stress MPa, elongation %).
-- Stored text (Source, Notes, history entries) is displayed exactly as saved — it is never auto-translated.
-- The header logo is `src/assets/lenovo-logo.png`.
-- ETAN 算法 page is a placeholder: add the formula in `src/lib/etan.ts` (`calcEtan`).
-- Deployment: GitHub Actions (`.github/workflows/pages.yml`) builds `dist/` and publishes it to GitHub Pages on every push to `main`.
-- Clearing site data removes the library; export CSV regularly.
+---
+
+## Branch status
+
+The `concepts/table-workspace-v2` branch currently represents the preferred V2 Material Library UI direction.
+
+Before replacing `main`, continue evaluating the concept in real CAE workflow use, especially:
+
+- material lookup speed
+- table readability with larger datasets
+- sidebar usefulness
+- Table / Card switching
+- comparison workflow
+- Material Map workflow
+- column density at 1440–1920 px desktop widths
+
+Until that evaluation is complete, **keep this branch separate from `main`**.
