@@ -69,7 +69,7 @@ export function MaterialTable(p: Props) {
       case 'name':
         return <td key={id} className="col-name sticky s2">{m.name}</td>;
       case 'category':
-        return <td key={id} className="col-category">{CATEGORY_LABEL[m.category]}</td>;
+        return <td key={id} className="col-category"><span className="table-category"><i className={`category-dot category-${m.category}`} aria-hidden="true" />{CATEGORY_LABEL[m.category]}</span></td>;
       case 'source':
         return (
           <td key={id} className="col-source" title={m.source}>

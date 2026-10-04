@@ -1,5 +1,16 @@
 # CAE 材料資料庫 (CAE Material Library)
 
+## Table + Card workspace concept
+
+This branch, `concepts/table-workspace-v2`, implements the selected workspace sketch.
+The Material Library opens in **Table View by default**; **Card View** is a secondary,
+category-grouped browsing mode. The dark sidebar provides workspace navigation and
+live category/source indexes. Sidebar filters and category chips share the same state;
+both views reuse the existing material data, selection, sorting, and display units.
+
+The production website below continues to use `main`. This concept branch does not
+change the GitHub Pages deployment workflow or the stored engineering values.
+
 ## Live Website
 
 [Open CAE Material Library](https://ayay2270.github.io/CAE-Material-Library/)
@@ -23,10 +34,11 @@ npm run build    # type-check + production build into dist/ (static, relative ba
 
 ## Features
 
-- **材料列表**: dense full-width table, one search box, filters (材料類別 / 來源 / 更新時間), sortable columns,
+- **材料庫**: default dense table with secondary grouped cards, one search box, sidebar/chip filters
+  (材料類別 / 來源 / 更新時間), sortable columns,
   sticky header / Material Name / Actions, missing values shown as hatched `—`.
 - **欄位設定**: drag (or ▲▼ buttons) to reorder columns, tick to show / hide, 還原預設. Material Name is pinned.
-  Order and visibility are saved in `localStorage` (`cae-material-library:columns:v1`). Density / stress display units live here too.
+  Order and visibility are saved in `localStorage` (`cae-material-library:columns:v1`). Density / stress display units are available here and above the library.
 - **材料比較**: tick 2 or more rows → 比較材料. No upper limit; the table scrolls horizontally.
 - **材料地圖**: one simplified Density × Young's Modulus (ρ–E) scatter with an ⓘ reading guide.
 - Row click opens a detail drawer (基本性質 / 材料曲線 / 來源與備註 / 歷史記錄) with edit and delete.

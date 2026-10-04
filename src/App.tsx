@@ -10,22 +10,36 @@ import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
 import type { Filters } from './components/Toolbar';
 import { ColumnSettings } from './components/ColumnSettings';
+import { Sidebar } from './components/Sidebar';
+import { MaterialCards } from './components/MaterialCards';
+import type { LibraryMode } from './components/Toolbar';
 import { MaterialTable } from './components/MaterialTable';
 import { MaterialDrawer } from './components/MaterialDrawer';
 import { MaterialForm } from './components/MaterialForm';
 import { ComparePage } from './components/ComparePage';
 import { MaterialMap } from './components/MaterialMap';
 import { EtanPage } from './components/EtanPage';
-import { ConfirmDelete, HelpDialog, ImportExportDialog, MapInfoDialog } from './components/Dialogs';
+import {
+  ConfirmDelete,
+  HelpDialog,
+  ImportExportDialog,
+  MapInfoDialog,
+} from './components/Dialogs';
 
 type Dialog = 'help' | 'io' | 'mapInfo' | null;
 
 export function App() {
-  const { materials, add, update, remove, importMany, resetToSamples } = useMaterials();
+  const { materials, add, update, remove, importMany, resetToSamples } =
+    useMaterials();
 
   const [view, setView] = useState<View>('materials');
+  const [libraryMode, setLibraryMode] = useState<LibraryMode>('table');
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<Filters>({ category: 'all', source: 'all', updated: 'all' });
+  const [filters, setFilters] = useState<Filters>({
+    category: 'all',
+    source: 'all',
+    updated: 'all',
+  });
   const [columnsOpen, setColumnsOpen] = useState(false);
   const cols = useColumnPrefs();
   const [sort, setSort] = useState<SortState>({ key: 'name', dir: 'asc' });
@@ -40,7 +54,11 @@ export function App() {
 
   // Drop selections that no longer exist (deleted / reset).
   useEffect(() => {
-    setSelected((s) => (s.every((id) => materials.some((m) => m.id === id)) ? s : s.filter((id) => materials.some((m) => m.id === id))));
+    setSelected((s) =>
+      s.every((id) => materials.some((m) => m.id === id))
+        ? s
+        : s.filter((id) => materials.some((m) => m.id === id)),
+    );
   }, [materials]);
 
   useEffect(() => {
@@ -52,7 +70,11 @@ export function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(t.tagName) && !document.querySelector('.overlay')) {
+      if (
+        e.key === '/' &&
+        !/INPUT|TEXTAREA|SELECT/.test(t.tagName) &&
+        !document.querySelector('.overlay')
+      ) {
         e.preventDefault();
         setView('materials');
         setTimeout(() => searchRef.current?.focus(), 0);
@@ -76,10 +98,16 @@ export function App() {
   const detail = materials.find((m) => m.id === detailId) ?? null;
 
   const toggle = (id: string) =>
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+    setSelected((s) =>
+      s.includes(id) ? s.filter((x) => x !== id) : [...s, id],
+    );
 
   const onSort = (key: SortKey) =>
-    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
+    setSort((s) =>
+      s.key === key
+        ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' }
+        : { key, dir: 'asc' },
+    );
 
   const save = (input: MaterialInput) => {
     if (editing && editing !== 'new') {
@@ -107,78 +135,109 @@ export function App() {
   return (
     <div className="app">
       <Header
-        view={view}
-        onNavigate={navigate}
         onHelp={() => setDialog('help')}
-        compareCount={selected.length}
+        onAdd={() => setEditing('new')}
       />
-
-      {view === 'materials' && (
-        <main className="page materials-page">
-          <Toolbar
-            ref={searchRef}
-            materials={materials}
-            query={query}
-            onQuery={setQuery}
-            filters={filters}
-            onFilters={setFilters}
-            selectedCount={selected.length}
-            onCompare={() => setView('compare')}
-            onClearSelection={() => setSelected([])}
-            onMap={() => setView('map')}
-            onColumns={() => setColumnsOpen((o) => !o)}
-            onImportExport={() => setDialog('io')}
-            onAdd={() => setEditing('new')}
-            columnsPopover={
-              columnsOpen && (
-                <ColumnSettings
-                  prefs={cols.prefs}
-                  units={units}
-                  onUnits={setUnits}
-                  onMove={cols.move}
-                  onStep={cols.step}
-                  onToggle={cols.toggle}
-                  onReset={cols.reset}
-                  onClose={() => setColumnsOpen(false)}
-                />
-              )
-            }
-          />
-          <MaterialTable
-            rows={rows}
-            total={materials.length}
-            columns={cols.visible}
-            sort={sort}
-            onSort={onSort}
-            selected={selected}
-            onToggle={toggle}
-            onClearSelection={() => setSelected([])}
-            onOpen={openDetail}
-            onEdit={(m) => setEditing(m)}
-            onDelete={(m) => setDeleting(m)}
-            units={units}
-            activeId={detailId}
-          />
-        </main>
-      )}
-
-      {view === 'compare' && (
-        <ComparePage
+      <div className="workspace-shell">
+        <Sidebar
           materials={materials}
-          selected={selected}
-          units={units}
-          onToggle={toggle}
-          onClear={() => setSelected([])}
-          onBack={() => setView('materials')}
-          onOpen={openDetail}
+          view={view}
+          onNavigate={navigate}
+          filters={filters}
+          onFilters={setFilters}
+          selectedCount={selected.length}
         />
-      )}
+        <div className="workspace-content">
+          {view === 'materials' && (
+            <main className="page materials-page">
+              <Toolbar
+                ref={searchRef}
+                materials={materials}
+                query={query}
+                onQuery={setQuery}
+                filters={filters}
+                onFilters={setFilters}
+                selectedCount={selected.length}
+                onCompare={() => setView('compare')}
+                onClearSelection={() => setSelected([])}
+                onColumns={() => setColumnsOpen((o) => !o)}
+                onImportExport={() => setDialog('io')}
+                mode={libraryMode}
+                onMode={setLibraryMode}
+                sort={sort}
+                onSortState={setSort}
+                units={units}
+                onUnits={setUnits}
+                visibleCount={rows.length}
+                columnsPopover={
+                  columnsOpen && (
+                    <ColumnSettings
+                      prefs={cols.prefs}
+                      units={units}
+                      onUnits={setUnits}
+                      onMove={cols.move}
+                      onStep={cols.step}
+                      onToggle={cols.toggle}
+                      onReset={cols.reset}
+                      onClose={() => setColumnsOpen(false)}
+                    />
+                  )
+                }
+              />
+              {libraryMode === 'table' ? (
+                <MaterialTable
+                  rows={rows}
+                  total={materials.length}
+                  columns={cols.visible}
+                  sort={sort}
+                  onSort={onSort}
+                  selected={selected}
+                  onToggle={toggle}
+                  onClearSelection={() => setSelected([])}
+                  onOpen={openDetail}
+                  onEdit={(m) => setEditing(m)}
+                  onDelete={(m) => setDeleting(m)}
+                  units={units}
+                  activeId={detailId}
+                />
+              ) : (
+                <MaterialCards
+                  rows={rows}
+                  total={materials.length}
+                  selected={selected}
+                  onToggle={toggle}
+                  onOpen={openDetail}
+                  units={units}
+                  activeId={detailId}
+                />
+              )}
+            </main>
+          )}
 
-      {view === 'etan' && <EtanPage materials={materials} />}
+          {view === 'compare' && (
+            <ComparePage
+              materials={materials}
+              selected={selected}
+              units={units}
+              onToggle={toggle}
+              onClear={() => setSelected([])}
+              onBack={() => setView('materials')}
+              onOpen={openDetail}
+            />
+          )}
 
-      {view === 'map' && (
-        <MaterialMap materials={materials} onBack={() => setView('materials')} onInfo={() => setDialog('mapInfo')} onOpen={openDetail} />
-      )}
+          {view === 'etan' && <EtanPage materials={materials} />}
+
+          {view === 'map' && (
+            <MaterialMap
+              materials={materials}
+              onBack={() => setView('materials')}
+              onInfo={() => setDialog('mapInfo')}
+              onOpen={openDetail}
+            />
+          )}
+        </div>
+      </div>
 
       {detail && !editing && !deleting && (
         <MaterialDrawer
@@ -198,9 +257,17 @@ export function App() {
           onClose={() => setEditing(null)}
         />
       )}
-      {deleting && <ConfirmDelete material={deleting} onConfirm={confirmDelete} onClose={() => setDeleting(null)} />}
+      {deleting && (
+        <ConfirmDelete
+          material={deleting}
+          onConfirm={confirmDelete}
+          onClose={() => setDeleting(null)}
+        />
+      )}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
-      {dialog === 'mapInfo' && <MapInfoDialog onClose={() => setDialog(null)} />}
+      {dialog === 'mapInfo' && (
+        <MapInfoDialog onClose={() => setDialog(null)} />
+      )}
       {dialog === 'io' && (
         <ImportExportDialog
           materials={materials}
