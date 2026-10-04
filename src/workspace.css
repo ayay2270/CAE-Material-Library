@@ -21,31 +21,31 @@
   gap: 20px;
   border-bottom: 1px solid var(--line);
 }
-.header-engineering {
+.header-landscape {
   position: absolute;
   inset: 0;
-  background: #eef1f5;
+  background: #edf3f2;
 }
-.header-engineering img {
+.header-landscape img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 32%;
-  opacity: 0.55;
+  object-position: center 25%;
+  opacity: 0.9;
 }
-.header-engineering:after {
+.header-landscape:after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     90deg,
     #fff 0%,
-    #fffffffa 22%,
-    #ffffff70 42%,
-    #ffffff28 70%,
-    #ffffffd9 100%
+    #fffffffa 20%,
+    #ffffff40 38%,
+    #ffffff00 68%,
+    #ffffffbc 100%
   );
 }
 .brand {

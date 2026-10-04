@@ -1,6 +1,6 @@
 import { HelpIcon, PlusIcon } from './icons';
 import logo from '../assets/lenovo-logo.png';
-import engineeringBackground from '../assets/material-metal-sheet.jpg';
+import landscapeBackground from '../assets/header-mountain-lake.jpg';
 export function Header({
   onHelp,
   onAdd,
@@ -10,8 +10,8 @@ export function Header({
 }) {
   return (
     <header className="app-header">
-      <div className="header-engineering" aria-hidden="true">
-        <img src={engineeringBackground} width={2400} height={1600} alt="" />
+      <div className="header-landscape" aria-hidden="true">
+        <img src={landscapeBackground} width={5600} height={630} alt="" />
       </div>
       <div className="brand">
         <img className="logo-img" src={logo} alt="Lenovo" />
