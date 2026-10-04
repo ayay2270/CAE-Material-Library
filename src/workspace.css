@@ -21,28 +21,31 @@
   gap: 20px;
   border-bottom: 1px solid var(--line);
 }
-.header-horizon {
+.header-engineering {
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, #fff 22%, #eef5f9 80%, #e4eef4);
+  background: #eef1f5;
 }
-.header-horizon svg {
+.header-engineering img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.58;
+  object-fit: cover;
+  object-position: center 32%;
+  opacity: 0.55;
 }
-.header-horizon:after {
+.header-engineering:after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     90deg,
-    #fff 15%,
-    #ffffffee 29%,
-    #ffffff88 46%,
-    #ffffff11 100%
+    #fff 0%,
+    #fffffffa 22%,
+    #ffffff70 42%,
+    #ffffff28 70%,
+    #ffffffd9 100%
   );
 }
 .brand {
@@ -486,9 +489,13 @@
   background: #1d53ca;
 }
 .materials-page .table-wrap {
+  flex: 0 1 auto;
   border-color: #d3dce9;
   border-radius: 4px;
   box-shadow: none;
+}
+.materials-page .table-scroll {
+  flex: 0 1 auto;
 }
 .materials-page .mat-table {
   min-width: 1400px;

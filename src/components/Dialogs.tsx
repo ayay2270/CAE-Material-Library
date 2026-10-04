@@ -135,6 +135,10 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <li><b>資料儲存</b>：資料保存在此瀏覽器的 localStorage，請定期匯出 CSV 備份；清除網站資料會一併移除。</li>
         <li><b>快捷鍵</b>：按 <kbd>/</kbd> 跳到搜尋列。</li>
       </ul>
+      <p className="muted small">
+        頁首背景：<a href="https://www.pexels.com/photo/silver-troughed-sheet-20062954/" target="_blank" rel="noopener noreferrer">Silver Troughed Sheet</a>
+        {' '}by Michaela St，<a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels License</a>。顯示時裁切並淡化。
+      </p>
     </Modal>
   );
 }
