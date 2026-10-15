@@ -59,11 +59,14 @@ const path = require('node:path');
     const h50 = hardening(200000, 250, 356, 50);
     assert.equal(await result.textContent(), `${h50.toFixed(2)} MPa`); // Recalculated from the edited properties.
     assert.equal(await tangent.textContent(), `${tangentOf(200000, h50).toFixed(2)} MPa`);
-    await edit({ Elongation: '40', 'H \\(MATS1\\)': '300' });
-    assert.equal(await result.textContent(), '740.07 MPa'); // The legacy stored H field no longer drives the drawer.
+    await edit({ Elongation: '40' });
+    assert.equal(await result.textContent(), '740.07 MPa');
     assert.equal(await tangent.textContent(), '737.34 MPa');
-    // Clearing the legacy field changes nothing here; the ETAN page below relies on it being empty.
-    await edit({ 'H \\(MATS1\\)': '', 'Yield Stress': '300' });
+    // The manual H input is hidden; H is always calculated.
+    await drawer.getByRole('button', { name: '編輯', exact: true }).click();
+    assert.equal(await page.getByRole('dialog', { name: '編輯 SGCC' }).getByLabel(/^H \(MATS1\)/).count(), 0);
+    await page.getByRole('dialog', { name: '編輯 SGCC' }).getByRole('button', { name: '取消', exact: true }).click();
+    await edit({ 'Yield Stress': '300' });
     assert.equal(await result.textContent(), `${hardening(200000, 300, 356, 40).toFixed(2)} MPa`);
     assert.equal(await page.getByTestId('mat003-sigy').textContent(), '300');
     await edit({ 'Yield Stress': '250', "Young's Modulus": '' });

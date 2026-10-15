@@ -40,7 +40,7 @@ export function MaterialTable(p: Props) {
     const def = COLUMN_BY_ID[id];
     const prop = propDef(id);
     const dir = p.sort.key === id ? p.sort.dir : null;
-    const sub = prop ? `${unitFor(prop, p.units)}${prop.optional ? ' · optional' : ''}` : undefined;
+    const sub = prop ? `${unitFor(prop, p.units)}${prop.calculated ? ' · calculated' : prop.optional ? ' · optional' : ''}` : undefined;
     return (
       <th
         key={id}

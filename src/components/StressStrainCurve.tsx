@@ -1,13 +1,15 @@
 import type { Material } from '../types';
+import { calculatedH } from '../lib/materialProperties';
 
 /**
- * Idealised bilinear curve derived from the stored properties:
- * linear elastic (slope E) up to σy, then the existing stored work-hardening estimate.
+ * Idealised bilinear curve derived from the material properties:
+ * linear elastic (slope E) up to σy, then the calculated work-hardening slope H.
  * This historical visual approximation is unchanged; it is not a MAT_003 solver output.
  * It is a visual aid only, not measured test data.
  */
 export function curvePoints(m: Material): { e: number; s: number }[] | null {
-  const { youngsModulus: E, yieldStress: sy, etan, ultimateStress: su, elongation } = m;
+  const { youngsModulus: E, yieldStress: sy, ultimateStress: su, elongation } = m;
+  const etan = calculatedH(m);
   if (E === null || sy === null || etan === null || E <= 0 || etan <= 0) return null;
   const ey = sy / E;
   let eEnd: number;
@@ -31,7 +33,7 @@ export function StressStrainCurve({ m }: { m: Material }) {
   if (!pts) {
     return (
       <div className="curve-empty">
-        無法繪製曲線：需要 Young's Modulus、Yield Stress、H，以及 Ultimate Stress 或 Elongation。
+        無法繪製曲線：需要 Young's Modulus、Yield Stress、Ultimate Stress 與 Elongation（用於計算 H）。
       </div>
     );
   }

@@ -103,25 +103,7 @@ function DetailsDisclosure({ children }: { children: ReactNode }) {
   );
 }
 
-export function EtanCalculationDetails({ inputs, parameters }: { inputs: HardeningInputs; parameters: ReturnType<typeof solverPlasticityParameters> }) {
-  const { hardeningSlopeH, tangentModulusEtan, hardeningSource } = parameters;
-  const result = parameters.calculatedHDetails;
-  return (
-    <DetailsDisclosure>
-      <h4>A. OptiStruct MATS1</h4>
-      <p className="etan-step-value">{hardeningSource === 'provided' ? 'Stored H' : 'Calculated H'} = {hardeningSlopeH == null ? 'unavailable' : `${hardeningSlopeH.toFixed(2)} MPa`}</p>
-      <p className="etan-formula-note">{hardeningSource === 'provided' ? 'Calculated H is reference only. Stored H remains the active OptiStruct value.' : 'Uses the existing bilinear estimate as active H because Stored H is unavailable. The upstream engineering model is unchanged.'}</p>
-      {result ? <HardeningSteps inputs={inputs} result={result} title="Calculated H — Existing bilinear estimate" />
-        : <p>Calculated H unavailable. Enter valid E, Yield Stress, Ultimate Stress and Elongation to view the calculated steps.</p>}
-      <h4>B. Convert H → ETAN · LS-DYNA MAT_003</h4>
-      <p className="etan-step-value">H source: {hardeningSource === 'provided' ? 'Stored H' : 'Calculated H'}</p>
-      <EtanConversion youngsModulus={inputs.youngsModulus} hardeningSlopeH={hardeningSlopeH} tangentModulusEtan={tangentModulusEtan} />
-      <FormulaReference />
-    </DetailsDisclosure>
-  );
-}
-
-/** Material detail drawer: H and ETAN are both calculated automatically from the material properties. */
+/** H and ETAN are both calculated automatically from the material properties (drawer and ETAN page). */
 export function AutoCalculationDetails({ inputs, parameters, hIssue }: { inputs: HardeningInputs; parameters: ReturnType<typeof solverPlasticityParameters>; hIssue: string | null }) {
   const { hardeningSlopeH, tangentModulusEtan } = parameters;
   const result = parameters.calculatedHDetails;

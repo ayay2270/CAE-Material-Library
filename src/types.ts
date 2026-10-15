@@ -55,7 +55,7 @@ export interface Material {
   youngsModulus: number | null; // MPa
   poissonRatio: number | null;
   yieldStress: number | null; // MPa
-  etan: number | null; // MPa: supplied MATS1 H. Legacy storage key retained for compatibility.
+  etan: number | null; // MPa: legacy stored MATS1 H. Kept for compatibility; not displayed or used (H is calculated).
   ultimateStress: number | null; // MPa
   elongation: number | null; // %
   source: string;

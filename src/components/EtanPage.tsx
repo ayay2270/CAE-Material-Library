@@ -40,9 +40,6 @@ export function EtanPage({ materials }: Props) {
     return { youngsModulus: n(vals.youngsModulus), yieldStress: n(vals.yieldStress), ultimateStress: n(vals.ultimateStress), elongation: n(vals.elongation) };
   }, [vals]);
 
-  // Retain supplied H while viewing the material. Edited calculator inputs use the existing estimate.
-  const providedH = material && FIELDS.every(({ key }) => inputs[key] === material[key]) ? material.etan : null;
-
   return (
     <main className="page etan-page">
       <div className="page-head">
@@ -74,7 +71,7 @@ export function EtanPage({ materials }: Props) {
           ))}
         </div>
 
-        <SolverPlasticityResults inputs={inputs} providedH={providedH} density={material?.density} poissonRatio={material?.poissonRatio} />
+        <SolverPlasticityResults inputs={inputs} density={material?.density} poissonRatio={material?.poissonRatio} />
       </div>
     </main>
   );

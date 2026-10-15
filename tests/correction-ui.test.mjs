@@ -19,7 +19,7 @@ const result = await build({
     export { calcHardeningSlope } from './src/lib/etan';
     export { hToEtan } from './src/lib/solverPlasticity';
     export const library = () => renderToStaticMarkup(<App />);
-    export const solver = (inputs, providedH) => renderToStaticMarkup(<SolverPlasticityResults inputs={inputs} providedH={providedH} />);
+    export const solver = inputs => renderToStaticMarkup(<SolverPlasticityResults inputs={inputs} />);
     export const imports = (database, editable, dirty = false) => renderToStaticMarkup(<ImportExportDialog editable={editable} dirty={dirty} database={database} materials={database.materials} visibleRows={database.materials} onImport={()=>({added:0,updated:0,unchanged:0})} onReset={()=>{}} onRecover={()=>{}} onLegacy={()=>{}} onReadOnly={()=>{}} onClose={()=>{}} />);
     export const drawer = material => renderToStaticMarkup(<MaterialDrawer editable={false} material={material} units={{density:'t/mm3',stress:'MPa'}} onClose={()=>{}} onEdit={()=>{}} onDelete={()=>{}} onSaveCurve={()=>null} />);
     export const guidance = supported => renderToStaticMarkup(<LocalEditingDialog supported={supported} permissionNeeded={false} onConnect={()=>{}} onClose={()=>{}} />);
@@ -34,20 +34,19 @@ const ui = compiled.exports;
 const database = JSON.parse(await readFile(new URL('../src/data/materials.json', import.meta.url), 'utf8'));
 const sgcc = database.materials.find(material => material.name === 'SGCC');
 
-test('real SGCC renders stored H, calculated reference, full substituted steps and correct ETAN source', () => {
-  const html = ui.solver(sgcc, sgcc.etan);
-  for (const text of ['Stored H', '740.06 MPa', 'Calculated H Estimate', '740.07 MPa', '737.33 MPa', 'H source: Stored H', 'Engineering strains', 'True stresses', 'True strains', 'Calculated H — Existing bilinear estimate', '250 × (1 + 0.00125)', '356 × (1 + 0.4)', 'ln(1 + 0.00125)', 'ln(1 + 0.4)', '498.4 − 250.3125', 'Calculated H is reference only.']) assert.ok(html.includes(text), text);
+test('ETAN page solver results use calculated H for real SGCC, with full substituted steps', () => {
+  const html = ui.solver(sgcc);
+  for (const text of ['740.07 MPa', '737.34 MPa', 'Calculated from Young&#x27;s Modulus, Yield Stress, Ultimate Stress and Elongation.', 'Engineering strains', 'True stresses', 'True strains', '250 × (1 + 0.00125)', '356 × (1 + 0.4)', 'ln(1 + 0.00125)', 'ln(1 + 0.4)', '498.4 − 250.3125', 'ETAN = 737.34 MPa', 'Formula Reference']) assert.ok(html.includes(text), text);
+  for (const legacy of ['Stored', 'stored', 'reference only', 'Estimate', 'H source']) assert.ok(!html.includes(legacy), legacy);
+  assert.ok(!/740\.06(?!\d)|737\.33(?!\d)/.test(html), 'legacy stored H result is not shown');
 });
 
-test('no stored H renders calculated active H and its conversion source; invalid estimate explains missing inputs', () => {
-  const html = ui.solver(sgcc, null);
-  assert.ok(html.includes('H source: Calculated H'));
-  assert.ok(html.includes('active H because Stored H is unavailable'));
-  assert.ok(html.includes('740.07 MPa'));
-  assert.ok(html.includes('737.34 MPa'));
-  const incomplete = ui.solver({ ...sgcc, elongation: null }, sgcc.etan);
-  assert.ok(incomplete.includes('Calculated H unavailable'));
-  assert.ok(incomplete.includes('737.33 MPa'));
+test('ETAN page solver results explain missing inputs instead of falling back to stored H', () => {
+  const incomplete = ui.solver({ ...sgcc, elongation: null });
+  assert.ok(incomplete.includes('H unavailable'));
+  assert.ok(incomplete.includes('ETAN unavailable'));
+  assert.ok(incomplete.includes('Enter valid material values'));
+  assert.ok(!incomplete.includes('etan-auto-steps'));
 });
 
 const byName = name => database.materials.find(material => material.name === name);

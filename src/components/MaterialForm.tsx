@@ -32,7 +32,8 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
   const [materialModel, setMaterialModel] = useState<MaterialModel>(initial?.materialModel ?? 'Isotropic');
   const [subCategory, setSubCategory] = useState(initial?.subCategory ?? '');
   const orthotropic = isOrthotropic({ category, materialModel });
-  const mechanicalProps = orthotropic ? PROPS.filter(p => p.key === 'density') : PROPS;
+  // Calculated properties (H) are not entered by hand.
+  const mechanicalProps = orthotropic ? PROPS.filter(p => p.key === 'density') : PROPS.filter(p => !p.calculated);
   const activeProps: PropDef<MaterialPropertyKey>[] = orthotropic
     ? [...mechanicalProps, ...ORTHOTROPIC_PROPS, ...COMPOSITE_STRENGTH_PROPS] : mechanicalProps;
   const [source, setSource] = useState(initial?.source ?? '');
@@ -83,7 +84,8 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
     };
     for (const p of PROPS) {
       const raw = vals[p.key].trim();
-      input[p.key] = orthotropic && p.key !== 'density' ? initial?.[p.key] ?? null : raw === '' ? null : Number(raw);
+      // Hidden fields keep the existing stored value unchanged (legacy H stays as-is; new materials get null).
+      input[p.key] = (orthotropic && p.key !== 'density') || p.calculated ? initial?.[p.key] ?? null : raw === '' ? null : Number(raw);
     }
     // Optional keys are omitted on untouched legacy records. Inactive data is retained
     // for reversible model switching, while all views use the explicit active model.
