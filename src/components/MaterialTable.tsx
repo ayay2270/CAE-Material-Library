@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Material } from '../types';
 import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
+import { materialValue } from '../lib/materialProperties';
 import { formatDay, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
 import { COLUMN_BY_ID } from '../lib/columns';
@@ -60,7 +61,7 @@ export function MaterialTable(p: Props) {
   const cell = (id: ColId, m: Material) => {
     const prop = propDef(id);
     if (prop) {
-      const v = m[prop.key];
+      const v = materialValue(m, prop.key);
       return (
         <td key={id} className={`num ${v === null ? 'missing' : ''}`} title={v === null ? `${prop.label} 無資料` : undefined}>
           {formatValue(prop.key, v, p.units)}

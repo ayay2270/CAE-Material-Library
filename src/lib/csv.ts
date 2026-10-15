@@ -1,6 +1,6 @@
 import { CATEGORIES } from '../types';
-import type { Category, Material, MaterialInput } from '../types';
-import { PROPS } from './props';
+import type { Category, CompositeStrength, Material, MaterialInput, OrthotropicProperties } from '../types';
+import { COMPOSITE_STRENGTH_PROPS, ORTHOTROPIC_PROPS, PROPS } from './props';
 import { isStressStrainData } from './curveData';
 
 // Export always uses base units (t/mm³, MPa, %) regardless of display prefs.
@@ -12,6 +12,10 @@ const HEADERS = [
   'Notes',
   'Last Updated',
   'Stress-Strain Curve JSON',
+  'Material Model',
+  'Sub Category',
+  ...ORTHOTROPIC_PROPS.map(p => p.key.toUpperCase()),
+  ...COMPOSITE_STRENGTH_PROPS.map(p => p.symbol),
 ];
 
 function esc(v: string): string {
@@ -30,6 +34,10 @@ export function toCsv(list: Material[]): string {
         m.notes,
         m.updatedAt,
         m.stressStrainCurve ? JSON.stringify(m.stressStrainCurve) : '',
+        m.materialModel ?? '',
+        m.subCategory ?? '',
+        ...ORTHOTROPIC_PROPS.map(p => String(m.orthotropic?.[p.key] ?? '')),
+        ...COMPOSITE_STRENGTH_PROPS.map(p => String(m.compositeStrength?.[p.key] ?? '')),
       ]
         .map(esc)
         .join(','),
@@ -102,6 +110,10 @@ export function csvToMaterials(text: string): ImportResult {
   const srcIdx = col('source');
   const notesIdx = col('notes');
   const curveIdx = col('stress-strain curve json');
+  const modelIdx = col('material model');
+  const subCategoryIdx = col('sub category');
+  // Exact tokens avoid collisions such as E1/E12 or Xt/other prefixed headers.
+  const constantCol = (key: string) => header.findIndex(h => h === key || h.startsWith(`${key} (`));
   // Accept the former ETAN header for the existing stored H field in older exports.
   const propIdx = PROPS.map((p) => p.key === 'etan'
     ? (col(p.label) >= 0 ? col(p.label) : col('etan'))
@@ -137,6 +149,37 @@ export function csvToMaterials(text: string): ImportResult {
       if (Number.isFinite(n)) m[p.key] = n;
       else errors.push(`第 ${line} 行：${p.label} 的「${raw}」不是數字，已留空。`);
     });
+    const rawModel = (r[modelIdx] ?? '').trim();
+    if (rawModel && rawModel !== '—') {
+      if (/^orthotropic$/i.test(rawModel)) m.materialModel = 'Orthotropic';
+      else if (/^isotropic( equivalent)?$/i.test(rawModel)) m.materialModel = 'Isotropic';
+      else {
+        errors.push(`第 ${line} 行：Material Model 無效，整列已略過以保護原資料。`);
+        return;
+      }
+    }
+    // Absent columns do not remove existing extension data on same-name imports.
+    if (subCategoryIdx >= 0) m.subCategory = (r[subCategoryIdx] ?? '').trim();
+    let invalid = false;
+    for (const [group, properties] of [
+      ['orthotropic', ORTHOTROPIC_PROPS],
+      ['compositeStrength', COMPOSITE_STRENGTH_PROPS],
+    ] as const) {
+      if (!properties.some(p => constantCol(p.key) >= 0)) continue;
+      const values: Record<string, number | null> = {};
+      for (const p of properties) {
+        const raw = (r[constantCol(p.key)] ?? '').trim();
+        const value = raw === '' || raw === '—' ? null : Number(raw);
+        if (value !== null && (!Number.isFinite(value) || (p.unit === 'MPa' && value <= 0))) {
+          errors.push(`第 ${line} 行：${p.symbol} 無效，整列已略過以保護原資料。`);
+          invalid = true;
+        }
+        values[p.key] = value;
+      }
+      if (group === 'orthotropic') m.orthotropic = values as OrthotropicProperties;
+      else m.compositeStrength = values as CompositeStrength;
+    }
+    if (invalid) return;
     if (curveIdx >= 0 && r[curveIdx]?.trim()) {
       try {
         const curve = JSON.parse(r[curveIdx]);

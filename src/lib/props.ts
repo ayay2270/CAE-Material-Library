@@ -1,7 +1,7 @@
-import type { PropKey } from '../types';
+import type { CompositeStrengthKey, MaterialPropertyKey, OrthotropicKey, PropKey } from '../types';
 
-export interface PropDef {
-  key: PropKey;
+export interface PropDef<K extends MaterialPropertyKey = PropKey> {
+  key: K;
   symbol: string;
   /** English property name — kept English everywhere in the UI. */
   label: string;
@@ -19,3 +19,18 @@ export const PROPS: PropDef[] = [
   { key: 'ultimateStress', symbol: 'σu', label: 'Ultimate Stress', unit: 'MPa' },
   { key: 'elongation', symbol: 'ε', label: 'Elongation', unit: '%', optional: true },
 ];
+
+export const ORTHOTROPIC_GROUPS: { label: string; props: PropDef<OrthotropicKey>[] }[] = [
+  { label: "Young's Modulus", props: ['e1', 'e2', 'e3'].map(key => ({ key: key as OrthotropicKey, symbol: key.toUpperCase(), label: key.toUpperCase(), unit: 'MPa' })) },
+  { label: 'Shear Modulus', props: ['g12', 'g13', 'g23'].map(key => ({ key: key as OrthotropicKey, symbol: key.toUpperCase(), label: key.toUpperCase(), unit: 'MPa' })) },
+  { label: "Poisson's Ratio", props: ['nu12', 'nu13', 'nu23'].map(key => ({ key: key as OrthotropicKey, symbol: key.replace('nu', 'ν'), label: key.replace('nu', 'ν'), unit: '—' })) },
+];
+export const ORTHOTROPIC_PROPS = ORTHOTROPIC_GROUPS.flatMap(group => group.props);
+export const COMPOSITE_STRENGTH_PROPS: PropDef<CompositeStrengthKey>[] = [
+  { key: 'xt', symbol: 'Xt', label: 'Xt — 1-direction tensile strength', unit: 'MPa', optional: true },
+  { key: 'xc', symbol: 'Xc', label: 'Xc — 1-direction compressive strength', unit: 'MPa', optional: true },
+  { key: 'yt', symbol: 'Yt', label: 'Yt — 2-direction tensile strength', unit: 'MPa', optional: true },
+  { key: 'yc', symbol: 'Yc', label: 'Yc — 2-direction compressive strength', unit: 'MPa', optional: true },
+  { key: 's12', symbol: 'S12', label: 'S12 — in-plane shear strength', unit: 'MPa', optional: true },
+];
+export const COMPOSITE_SUBCATEGORIES = ['PCB Laminate (FR4)', 'GFRP', 'CFRP', 'Other Composite'] as const;

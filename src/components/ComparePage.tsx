@@ -1,6 +1,7 @@
 import type { Material } from '../types';
 import { useIndexes } from '../lib/indexes';
-import { PROPS } from '../lib/props';
+import { COMPOSITE_STRENGTH_PROPS, ORTHOTROPIC_PROPS, PROPS } from '../lib/props';
+import { isOrthotropic, materialValue } from '../lib/materialProperties';
 import { formatDateLong, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
 import { ArrowLeftIcon, CloseIcon } from './icons';
@@ -18,6 +19,12 @@ interface Props {
 export function ComparePage({ materials, selected, units, onToggle, onClear, onBack, onOpen }: Props) {
   const indexes = useIndexes();
   const picked = selected.map((id) => materials.find((m) => m.id === id)).filter((m): m is Material => !!m);
+  const allOrthotropic = picked.length > 0 && picked.every(isOrthotropic);
+  const properties = [
+    ...PROPS.filter(p => !allOrthotropic || p.key === 'density'),
+    ...(picked.some(isOrthotropic) ? ORTHOTROPIC_PROPS : []),
+    ...COMPOSITE_STRENGTH_PROPS.filter(p => picked.some(m => materialValue(m, p.key) !== null)),
+  ];
 
   return (
     <main className="page compare-page">
@@ -76,8 +83,8 @@ export function ComparePage({ materials, selected, units, onToggle, onClear, onB
                     <td key={m.id} className="num txt">{indexes.label(m.category)}</td>
                   ))}
                 </tr>
-                {PROPS.map((p) => {
-                  const nums = picked.map((m) => m[p.key]).filter((v): v is number => v !== null);
+                {properties.map((p) => {
+                  const nums = picked.map((m) => materialValue(m, p.key)).filter((v): v is number => v !== null);
                   const differs = new Set(nums).size > 1;
                   const u = unitFor(p, units);
                   return (
@@ -88,7 +95,7 @@ export function ComparePage({ materials, selected, units, onToggle, onClear, onB
                         {u === '—' && <small className="muted"> (—)</small>}
                       </td>
                       {picked.map((m) => {
-                        const v = m[p.key];
+                        const v = materialValue(m, p.key);
                         return (
                           <td key={m.id} className={`num ${v === null ? 'missing' : ''} ${differs && v !== null ? 'differs' : ''}`}>
                             {formatValue(p.key, v, units)}

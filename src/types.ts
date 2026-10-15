@@ -19,6 +19,13 @@ export type PropKey =
   | 'ultimateStress'
   | 'elongation';
 
+export type OrthotropicKey = 'e1' | 'e2' | 'e3' | 'g12' | 'g13' | 'g23' | 'nu12' | 'nu13' | 'nu23';
+export type CompositeStrengthKey = 'xt' | 'xc' | 'yt' | 'yc' | 's12';
+export type MaterialPropertyKey = PropKey | OrthotropicKey | CompositeStrengthKey;
+export type OrthotropicProperties = Record<OrthotropicKey, number | null>;
+export type CompositeStrength = Record<CompositeStrengthKey, number | null>;
+export type MaterialModel = 'Isotropic' | 'Orthotropic';
+
 export interface HistoryEntry {
   at: string; // ISO timestamp
   action: 'created' | 'edited' | 'imported';
@@ -38,6 +45,12 @@ export interface Material {
   id: string;
   name: string;
   category: Category;
+  /** Omitted on legacy records: use the existing isotropic workflow. */
+  materialModel?: MaterialModel;
+  subCategory?: string;
+  /** Complete 3D constants, independent of any future solver card mapping. */
+  orthotropic?: OrthotropicProperties;
+  compositeStrength?: CompositeStrength;
   density: number | null; // t/mm³
   youngsModulus: number | null; // MPa
   poissonRatio: number | null;

@@ -33,6 +33,21 @@ export function validateDatabase(value) {
     if (!categories.has(m.category) || (m.source && !sources.has(m.source))) fail(`Missing index for material ${m.name}.`);
     for (const key of ['density', 'youngsModulus', 'poissonRatio', 'yieldStress', 'etan', 'ultimateStress', 'elongation'])
       if (m[key] !== null && !finite(m[key])) fail(`Invalid or missing ${key} for ${m.name}.`);
+    // Additive schema v1 extension: never infer a model or rewrite legacy values.
+    if ('materialModel' in m && !['Isotropic', 'Orthotropic'].includes(m.materialModel)) fail(`Invalid materialModel for ${m.name}.`);
+    if ('subCategory' in m && !text(m.subCategory)) fail(`Invalid subCategory for ${m.name}.`);
+    for (const [group, keys] of [
+      ['orthotropic', ['e1', 'e2', 'e3', 'g12', 'g13', 'g23', 'nu12', 'nu13', 'nu23']],
+      ['compositeStrength', ['xt', 'xc', 'yt', 'yc', 's12']],
+    ]) {
+      if (!(group in m)) continue;
+      if (!object(m[group])) fail(`Invalid ${group} for ${m.name}.`);
+      for (const key of keys) {
+        const v = m[group][key];
+        if (v !== null && (!finite(v) || (!key.startsWith('nu') && v <= 0)))
+          fail(`Invalid or missing ${group}.${key} for ${m.name}.`);
+      }
+    }
     if (!text(m.source) || !text(m.notes) || !date(m.updatedAt) || !Array.isArray(m.history)) fail(`Invalid metadata for ${m.name}.`);
     for (const h of m.history)
       if (!object(h) || !date(h.at) || !['created', 'edited', 'imported'].includes(h.action) || !text(h.summary)) fail(`Invalid history for ${m.name}.`);

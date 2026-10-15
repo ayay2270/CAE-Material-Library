@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Material } from '../types';
+import { isOrthotropic } from '../lib/materialProperties';
 import type { HardeningInputs } from '../lib/etan';
 import { SolverPlasticityResults } from './SolverPlasticityResults';
 
@@ -54,7 +55,7 @@ export function EtanPage({ materials }: Props) {
           <span>選擇材料</span>
           <select value={matId} onChange={(e) => pick(e.target.value)}>
             <option value="">— 手動輸入 —</option>
-            {materials.map((m) => (
+            {materials.filter(m => !isOrthotropic(m)).map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
               </option>

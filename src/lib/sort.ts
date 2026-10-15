@@ -1,6 +1,7 @@
 import type { Material } from '../types';
 import { CATEGORY_LABEL } from '../types';
 import { PROPS } from './props';
+import { materialValue } from './materialProperties';
 
 export type SortKey = 'name' | 'category' | 'source' | 'updatedAt' | (typeof PROPS)[number]['key'];
 export interface SortState {
@@ -9,7 +10,7 @@ export interface SortState {
 }
 
 function value(m: Material, key: SortKey): string | number | null {
-  const v = m[key];
+  const v = PROPS.some(p => p.key === key) ? materialValue(m, key as (typeof PROPS)[number]['key']) : m[key];
   if (typeof v === 'string' && v === '') return null;
   return v;
 }
