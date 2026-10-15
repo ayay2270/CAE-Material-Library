@@ -99,7 +99,7 @@
 .solver-bridge-title h3 { margin: 0; font-size: 13.5px; color: var(--navy); }
 .solver-bridge-title span { font-size: 11.5px; color: var(--muted); }
 .solver-bridge-card { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.solver-bridge-hero { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; padding: 8px 14px 12px; background: #eef4fe; }
+.solver-bridge-hero { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; padding: 8px 14px 12px; background: #eef4fe; }
 .solver-bridge-result { min-width: 0; }
 .solver-bridge-result h4 { margin: 0 0 8px; font-size: 12.5px; color: var(--navy); }
 .solver-bridge-result h4 span { margin-left: 4px; font-size: 11px; font-weight: 400; color: var(--muted); }
@@ -117,7 +117,7 @@
 .solver-bridge-map { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
 .solver-bridge-map col.kw { width: 64px; }
 .solver-bridge-map col.unit { width: 44px; }
-.solver-bridge-map col.gap { width: 28px; }
+.solver-bridge-map col.gap { width: 56px; } /* 14px inner padding per side + 28px gutter, as in the mockup */
 .solver-bridge-map col:first-child { width: 78px; } /* 14px card padding + keyword */
 .solver-bridge-map col:last-child { width: 58px; } /* unit + 14px card padding */
 .solver-bridge-map thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
