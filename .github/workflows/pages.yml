@@ -1,6 +1,7 @@
-name: Deploy V2 Preview to GitHub Pages
+name: Deploy WIP Preview to GitHub Pages
 
-# Builds the app and publishes it to GitHub Pages on every push to main (or when run manually).
+# Temporary preview repository for wip/solver-bridge-calculated-h. Not production.
+# Builds with a relative base (build:preview) so it is served at this repository's own Pages path.
 on:
   push:
     branches: [main]
@@ -29,7 +30,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - run: npm run build:preview
       - run: npm run test:production
       - uses: actions/upload-pages-artifact@v3
         with:
