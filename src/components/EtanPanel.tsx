@@ -33,12 +33,11 @@ function Result({ solver, card, symbol, description, value, issue, testId }: {
 }) {
   return (
     <section className="solver-bridge-result" aria-label={`${solver} ${card.replace(/[*+ ]+/g, ' ').trim()} result`}>
-      <h4>{solver} <span>· {card}</span></h4>
-      <b className="solver-bridge-symbol">{symbol}</b>
+      <h4>{solver} <span>{card}</span></h4>
+      <b className="solver-bridge-symbol">{symbol}<span>{description}</span></b>
       <strong className={`solver-bridge-value${value == null ? ' unavailable' : ''}`} data-testid={testId}>
         {value == null ? 'Not available' : <>{value.toFixed(2)}<small> MPa</small></>}
       </strong>
-      <span className="solver-bridge-desc">{description}</span>
       {issue && <span className={`solver-bridge-issue${issue.warn ? ' warn' : ''}`}>{issue.warn && <span aria-hidden="true">⚠ </span>}{issue.text}</span>}
     </section>
   );

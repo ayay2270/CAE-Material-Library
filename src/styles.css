@@ -206,7 +206,7 @@ td.col-updatedAt { color: var(--ink-2); font-variant-numeric: tabular-nums; }
   background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(190, 150, 90, 0.16) 4px 5px);
 }
 /* Drawer basic properties: open list, hierarchy from type and spacing instead of cell borders. */
-.prop-grid-open { gap: 12px 16px; padding: 2px 2px 14px; border: 0; border-bottom: 1px solid #edf0f4; }
+.prop-grid-open { gap: 12px 16px; padding: 2px 2px 16px; border: 0; border-bottom: 1px solid #edf0f4; }
 .prop-grid-open > div { padding: 0; border: 0; }
 .prop-grid-open dt { color: var(--muted); }
 .prop-grid-open dd { margin-top: 1px; }
