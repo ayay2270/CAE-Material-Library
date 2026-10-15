@@ -1,17 +1,18 @@
 # Header background attribution
 
-Asset: `header-mountain-lake.jpg`
+Asset: `header-mountain-sunrise.webp`
 
-Title: **Lake Tohoe Panoramic Kia** (Lake Tahoe panorama)
-Author: **K0ur0sh**
-Source: https://commons.wikimedia.org/wiki/File:Lake_Tohoe_Panoramic_Kia.JPG
-Photographed: 26 July 2009
-Download: https://upload.wikimedia.org/wikipedia/commons/d/da/Lake_Tohoe_Panoramic_Kia.JPG
-License: **Public Domain**, released worldwide by the copyright holder (PD-self)
-License statement: See the Licensing section on the source page above.
+Mountain lake at sunrise (sunrise on the left, snowy mountains on the right).
+Provided by the project owner for the header banner.
+Source / author / license: _to be confirmed by the project owner_.
 
-This is a real photograph of Lake Tahoe and its surrounding mountains. The
-photographer describes taking it with their camera and editing it on their PC.
-The 5600 × 630 JPEG is unmodified; the header crops it with CSS and applies
-a white gradient for text readability.
-This credit also appears in the application's 使用說明 dialog.
+The 2000 × 666 WebP is used unmodified (byte-identical to the supplied file);
+the header crops it with CSS (`object-fit: cover`, `object-position: center 70%`, 131px tall)
+and applies a white gradient for text readability.
+
+## Previous header image (no longer displayed)
+
+`header-mountain-lake.jpg` — **Lake Tohoe Panoramic Kia** by **K0ur0sh**,
+https://commons.wikimedia.org/wiki/File:Lake_Tohoe_Panoramic_Kia.JPG,
+Public Domain (PD-self). The file is kept in the repository but is no longer
+imported by the app.

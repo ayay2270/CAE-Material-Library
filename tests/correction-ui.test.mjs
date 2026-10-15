@@ -25,7 +25,7 @@ const result = await build({
     export const guidance = supported => renderToStaticMarkup(<LocalEditingDialog supported={supported} permissionNeeded={false} onConnect={()=>{}} onClose={()=>{}} />);
   `, resolveDir: fileURLToPath(new URL('../', import.meta.url)), loader: 'tsx' },
   bundle: true, write: false, platform: 'node', format: 'cjs', jsx: 'automatic',
-  loader: { '.css': 'empty', '.png': 'dataurl', '.jpg': 'dataurl' },
+  loader: { '.css': 'empty', '.png': 'dataurl', '.jpg': 'dataurl', '.webp': 'dataurl' },
   define: { 'import.meta.env.DEV': 'false', 'import.meta.env.BASE_URL': '"/CAE-Material-Library-V2-Preview/"', 'process.env.NODE_ENV': '"production"' },
 });
 const compiled = { exports: {} };

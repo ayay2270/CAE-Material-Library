@@ -1,6 +1,6 @@
 import { HelpIcon, PlusIcon } from './icons';
 import logo from '../assets/lenovo-logo.png';
-import landscapeBackground from '../assets/header-mountain-lake.jpg';
+import landscapeBackground from '../assets/header-mountain-sunrise.webp';
 import type { ReactNode } from 'react';
 export function Header({
   onHelp,
@@ -16,7 +16,7 @@ export function Header({
   return (
     <header className="app-header">
       <div className="header-landscape" aria-hidden="true">
-        <img src={landscapeBackground} width={5600} height={630} alt="" />
+        <img src={landscapeBackground} width={2000} height={666} alt="" />
       </div>
       <div className="brand">
         <img className="logo-img" src={logo} alt="Lenovo" />
