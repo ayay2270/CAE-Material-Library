@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { committedDatabase, LOCAL_EDITOR, readLocalDatabase, writeLocalDatabase } from './masterDatabase';
 import { validateDatabase } from './database-schema.mjs';
 import { detectLegacy, recoverLegacy, RECOVERY_KEY, type LegacyRecovery } from './legacy';
-import { PROPS } from './props';
+import { COMPOSITE_STRENGTH_PROPS, ORTHOTROPIC_PROPS, PROPS } from './props';
 import { formatValue } from './format';
 import type { HistoryEntry, Material, MaterialInput, StressStrainData } from '../types';
 import { isStressStrainData } from './curveData';
@@ -17,10 +17,20 @@ function newId(): string {
 }
 const NO_CHANGES = '無欄位變更';
 /** Human-readable diff of two records for the history log. */
-function describeChanges(before: Material, after: MaterialInput): string {
+export function describeChanges(before: Material, after: MaterialInput): string {
   const changes: string[] = [];
   if (before.name !== after.name) changes.push(`名稱: ${before.name} → ${after.name}`);
   if (before.category !== after.category) changes.push(`Category: ${before.category} → ${after.category}`);
+  if (after.materialModel !== undefined && before.materialModel !== after.materialModel) changes.push(`Material Model: ${before.materialModel ?? 'Isotropic'} → ${after.materialModel}`);
+  if (after.subCategory !== undefined && before.subCategory !== after.subCategory) changes.push(`Sub Category: ${before.subCategory ?? '—'} → ${after.subCategory || '—'}`);
+  for (const p of ORTHOTROPIC_PROPS) {
+    if (after.orthotropic !== undefined && (before.orthotropic?.[p.key] ?? null) !== after.orthotropic[p.key])
+      changes.push(`${p.symbol}: ${formatValue(p.key, before.orthotropic?.[p.key] ?? null)} → ${formatValue(p.key, after.orthotropic[p.key])}`);
+  }
+  for (const p of COMPOSITE_STRENGTH_PROPS) {
+    if (after.compositeStrength !== undefined && (before.compositeStrength?.[p.key] ?? null) !== after.compositeStrength[p.key])
+      changes.push(`${p.symbol}: ${formatValue(p.key, before.compositeStrength?.[p.key] ?? null)} → ${formatValue(p.key, after.compositeStrength[p.key])}`);
+  }
   for (const p of PROPS) {
     if (before[p.key] !== after[p.key])
       changes.push(`${p.label}: ${formatValue(p.key, before[p.key])} → ${formatValue(p.key, after[p.key])}`);

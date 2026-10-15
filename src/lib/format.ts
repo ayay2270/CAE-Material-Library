@@ -1,4 +1,4 @@
-import type { PropKey } from '../types';
+import type { MaterialPropertyKey } from '../types';
 import type { PropDef } from './props';
 
 export interface UnitPrefs {
@@ -7,16 +7,16 @@ export interface UnitPrefs {
 }
 export const DEFAULT_UNITS: UnitPrefs = { density: 't/mm³', stress: 'MPa' };
 
-const STRESS_KEYS: PropKey[] = ['youngsModulus', 'yieldStress', 'etan', 'ultimateStress'];
+const STRESS_KEYS: MaterialPropertyKey[] = ['youngsModulus', 'yieldStress', 'etan', 'ultimateStress', 'e1', 'e2', 'e3', 'g12', 'g13', 'g23', 'xt', 'xc', 'yt', 'yc', 's12'];
 
-export function unitFor(p: PropDef, u: UnitPrefs): string {
+export function unitFor(p: PropDef<MaterialPropertyKey>, u: UnitPrefs): string {
   if (p.key === 'density') return u.density;
   if (STRESS_KEYS.includes(p.key)) return u.stress;
   return p.unit;
 }
 
 /** Converts a stored (t/mm³, MPa) value to the display unit. */
-export function toDisplay(key: PropKey, v: number, u: UnitPrefs): number {
+export function toDisplay(key: MaterialPropertyKey, v: number, u: UnitPrefs): number {
   if (key === 'density' && u.density === 'kg/m³') return v * 1e12;
   if (STRESS_KEYS.includes(key) && u.stress === 'GPa') return v / 1000;
   return v;
@@ -27,7 +27,7 @@ function sci(v: number): string {
   return v.toExponential(6).replace(/\.?0+e/, 'e').replace('e+', 'E').replace('e', 'E');
 }
 
-export function formatValue(key: PropKey, v: number | null, u: UnitPrefs = DEFAULT_UNITS): string {
+export function formatValue(key: MaterialPropertyKey, v: number | null, u: UnitPrefs = DEFAULT_UNITS): string {
   if (v === null) return '—';
   const d = toDisplay(key, v, u);
   if (key === 'density' && u.density === 't/mm³') return sci(d);

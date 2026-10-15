@@ -3,7 +3,8 @@ import {
   type Category,
 } from '../types';
 import { formatDay, formatValue, unitFor, type UnitPrefs } from '../lib/format';
-import { PROPS } from '../lib/props';
+import { ORTHOTROPIC_PROPS, PROPS } from '../lib/props';
+import { isOrthotropic, materialValue } from '../lib/materialProperties';
 import { useIndexes } from '../lib/indexes';
 import type { CSSProperties } from 'react';
 
@@ -104,8 +105,9 @@ export function MaterialCards({
                         />
                       </header>
                       <dl>
-                        {fields.map((key) => {
-                          const prop = PROPS.find((p) => p.key === key)!;
+                        {(isOrthotropic(material) ? ['density', 'e1', 'e2', 'e3', 'g12'] as const : fields).map((key) => {
+                          const prop = [...PROPS, ...ORTHOTROPIC_PROPS].find((p) => p.key === key)!;
+                          const value = materialValue(material, key);
                           return (
                             <div
                               key={key}
@@ -114,10 +116,10 @@ export function MaterialCards({
                               <dt>{prop.symbol}</dt>
                               <dd
                                 className={
-                                  material[key] === null ? 'missing' : ''
+                                  value === null ? 'missing' : ''
                                 }
                               >
-                                {formatValue(key, material[key], units)}
+                                {formatValue(key, value, units)}
                               </dd>
                             </div>
                           );

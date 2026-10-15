@@ -1,0 +1,21 @@
+.form-section-title, .orthotropic-detail h3 { font-size: 13px; font-weight: 600; }
+.composite-strength-fields { align-items: end; }
+.orthotropic-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.orthotropic-group { min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px; background: var(--head-bg); border-radius: var(--radius); }
+.orthotropic-group h4 { margin: 0; font-size: 11.5px; color: var(--ink-2); font-weight: 600; }
+.orthotropic-detail h3 { display: flex; align-items: center; gap: 5px; margin: 16px 0 10px; }
+.orthotropic-group dl { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.orthotropic-group dt { font-size: 11.5px; color: var(--ink-2); }
+.orthotropic-group dd { margin: 3px 0 0; font: 600 14px var(--mono); }
+.orthotropic-group dd small { margin-left: 4px; color: var(--muted); font: 11px var(--font); }
+.orthotropic-group .missing dd { color: var(--muted); font-weight: 400; }
+.orthotropic-info { position: relative; display: inline-flex; vertical-align: middle; }
+.orthotropic-info [role="tooltip"] { display: none; position: absolute; top: 100%; right: 0; z-index: 10; width: 260px; max-width: 72vw; padding: 10px 12px; background: var(--navy); color: white; border-radius: var(--radius); box-shadow: 0 4px 12px #14233f26; font: 12px/1.6 var(--font); text-transform: none; letter-spacing: normal; }
+.orthotropic-info:hover [role="tooltip"], .orthotropic-info:focus-within [role="tooltip"] { display: block; }
+@media (max-width: 540px) {
+  .orthotropic-groups { grid-template-columns: 1fr; }
+  .orthotropic-group h4 { font-size: 12px; }
+  .orthotropic-group dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .orthotropic-group dd { font-size: 12px; }
+  .orthotropic-info [role="tooltip"] { right: -10px; }
+}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Material, StressStrainData } from '../types';
 import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
+import { isOrthotropic } from '../lib/materialProperties';
+import { OrthotropicProperties } from './OrthotropicProperties';
 import { formatDateLong, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
 import { Modal } from './Modal';
@@ -67,8 +69,9 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
       <div role="tabpanel">
         {tab === 'props' && (
           <>
+          {m.category === 'Composite' && <p className="muted">{m.subCategory ? `${m.subCategory} · ` : ''}{isOrthotropic(m) ? 'Orthotropic' : 'Isotropic Equivalent'}</p>}
           <dl className="prop-grid">
-            {PROPS.map((p) => {
+            {PROPS.filter(p => !isOrthotropic(m) || p.key === 'density').map((p) => {
               const v = m[p.key];
               return (
                 <div key={p.key} className={v === null ? 'missing' : ''}>
@@ -84,7 +87,7 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
               );
             })}
           </dl>
-          <EtanPanel key={m.id} material={m} />
+          {isOrthotropic(m) ? <OrthotropicProperties material={m} units={units} /> : <EtanPanel key={m.id} material={m} />}
           </>
         )}
 

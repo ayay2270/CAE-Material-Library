@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Category, Material } from '../types';
+import { isOrthotropic } from '../lib/materialProperties';
 import { useIndexes } from '../lib/indexes';
 import { ArrowLeftIcon, InfoIcon } from './icons';
 
@@ -172,8 +173,8 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
   }, []);
 
   // Only materials with BOTH ρ and E can be plotted; missing values are never treated as zero.
-  const plottable = useMemo(() => materials.filter((m) => m.density !== null && m.youngsModulus !== null), [materials]);
-  const skipped = materials.filter((m) => m.density === null || m.youngsModulus === null);
+  const plottable = useMemo(() => materials.filter((m) => !isOrthotropic(m) && m.density !== null && m.youngsModulus !== null), [materials]);
+  const skipped = materials.filter((m) => isOrthotropic(m) || m.density === null || m.youngsModulus === null);
 
   const { w, h } = size;
   const pad = { l: 80, r: 28, t: 24, b: 60 };
@@ -308,7 +309,7 @@ export function MaterialMap({ materials, onBack, onInfo, onOpen }: Props) {
             </ul>
             {skipped.length > 0 && (
               <p className="skipped" data-testid="map-skipped">
-                未顯示（缺少 Density 或 Young's Modulus）：{skipped.map((m) => m.name).join('、')}
+                未顯示（Orthotropic 或缺少 Density / Young's Modulus）：{skipped.map((m) => m.name).join('、')}
               </p>
             )}
           </>
