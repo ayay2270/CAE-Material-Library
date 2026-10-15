@@ -10,6 +10,7 @@ import { changeIndex, deriveIndexes, type IndexKind } from './indexes';
 import { authorizeDatabaseFile, databaseErrorChinese, databaseIsDirty, pickDatabaseFile, readDatabaseFile, restoreDatabaseFile, saveDatabaseFile, supportsFileDatabase, type DatabaseFileHandle, type FileSession } from './browserDatabase';
 import { forgetHandle, getRememberedHandle, rememberHandle } from './fileHandleStore';
 import { useGitHubSync } from './useGitHubSync';
+import { isOrthotropicExample, readOrthotropicExample, saveOrthotropicExample } from './orthotropicExample';
 
 function newId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -42,12 +43,21 @@ export function describeChanges(before: Material, after: MaterialInput): string 
 }
 
 export function useMaterials() {
-  const [initial] = useState(committedDatabase);
+  const [exampleMode] = useState(() => typeof window !== 'undefined' && isOrthotropicExample(window.location.search));
+  const [initial] = useState(() => {
+    const master = committedDatabase();
+    // Accessing sessionStorage itself can fail in restricted browsers.
+    if (exampleMode) {
+      try { return readOrthotropicExample(master, window.sessionStorage); }
+      catch { return readOrthotropicExample(master, { getItem: () => null, setItem: () => {} }); }
+    }
+    return master;
+  });
   const [draft, setDraft] = useState(initial);
   const latest = useRef(draft);
   latest.current = draft;
   const [saved, setSaved] = useState(initial);
-  const [fileSupported] = useState(supportsFileDatabase);
+  const [fileSupported] = useState(() => !exampleMode && supportsFileDatabase());
   const [fileStatus, setFileStatus] = useState<'unlinked' | 'checking' | 'permission' | 'linked' | 'unsupported'>(fileSupported ? 'unlinked' : 'unsupported');
   const fileSession = useRef<FileSession | null>(null);
   const pendingHandle = useRef<DatabaseFileHandle | null>(null);
@@ -57,16 +67,16 @@ export function useMaterials() {
   const [lastReadAt, setLastReadAt] = useState<number | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [saveSequence, setSaveSequence] = useState(0);
-  const [ready, setReady] = useState(!LOCAL_EDITOR);
+  const [ready, setReady] = useState(exampleMode || !LOCAL_EDITOR);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const connection = useRef({ revision: '', token: '' });
   const [legacy, setLegacy] = useState<LegacyRecovery | null>(null);
   const indexes = useMemo(() => deriveIndexes(draft.materials, draft.indexes), [draft]);
-  const editable = fileStatus === 'linked' || (LOCAL_EDITOR && ready && !fileSession.current);
+  const editable = exampleMode || fileStatus === 'linked' || (LOCAL_EDITOR && ready && !fileSession.current);
   const dirty = databaseIsDirty({ ...draft, indexes }, saved);
-  const github = useGitHubSync(saved, fileStatus === 'linked' || (LOCAL_EDITOR && ready), saveSequence);
+  const github = useGitHubSync(saved, !exampleMode && (fileStatus === 'linked' || (LOCAL_EDITOR && ready)), saveSequence);
   const applyFile = (session: FileSession) => {
     fileSession.current = session; pendingHandle.current = session.handle;
     latest.current = session.database; setDraft(session.database); setSaved(session.database);
@@ -79,6 +89,8 @@ export function useMaterials() {
     setDraft(latest.current);
   };
   useEffect(() => {
+    // Do not restore remembered files, call the dev writer, or recover legacy storage in the sandbox.
+    if (exampleMode) return;
     let cancelled = false;
     const version = fileGeneration.current;
     const load = async () => {
@@ -109,7 +121,7 @@ export function useMaterials() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [initial]);
+  }, [initial, exampleMode]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
@@ -118,6 +130,7 @@ export function useMaterials() {
   }, [dirty]);
   const assertEditor = () => { if (!editable) throw new Error('資料庫尚未就緒，或目前為唯讀模式。'); };
   const connectFile = async (forcePick = false) => {
+    if (exampleMode) return;
     if (savingRef.current || fileStatus === 'checking') return;
     if (dirty && (forcePick || fileStatus !== 'permission')) { setFileError('有未儲存變更，請先儲存或匯出草稿並取消未儲存變更，再連結其他檔案。'); return; }
     ++fileGeneration.current;
@@ -170,7 +183,8 @@ export function useMaterials() {
     savingRef.current = true; setSaving(true); setSaveError(null);
     try {
       const snapshot = validateDatabase({ ...latest.current, indexes: deriveIndexes(latest.current.materials, latest.current.indexes) });
-      if (fileSession.current) {
+      if (exampleMode) saveOrthotropicExample(snapshot, window.sessionStorage);
+      else if (fileSession.current) {
         const session = await saveDatabaseFile(fileSession.current, snapshot);
         fileSession.current = session; setBackupText(session.backupText ?? null);
       } else connection.current.revision = await writeLocalDatabase(snapshot, connection.current.revision, connection.current.token);
@@ -268,5 +282,5 @@ export function useMaterials() {
   return { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
     editable, dirty, ready, saving, saveError, saveDatabase, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database: draft,
     fileSupported, fileStatus, fileError, fileName: fileSession.current?.handle.name ?? pendingHandle.current?.name ?? null, connectFile, reloadFile, disconnectFile,
-    lastReadAt, lastSavedAt, backupText, github, developerMode: LOCAL_EDITOR && ready && !fileSession.current };
+    lastReadAt, lastSavedAt, backupText, github, exampleMode, developerMode: !exampleMode && LOCAL_EDITOR && ready && !fileSession.current };
 }

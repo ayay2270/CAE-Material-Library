@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Material, MaterialInput, View } from './types';
 import { useMaterials } from './lib/storage';
+import { EXAMPLE_ID } from './lib/orthotropicExample';
 import { DatabaseStatus } from './components/DatabaseStatus';
 import { requestLocalEditing } from './lib/localEditing';
 import { LocalEditingDialog } from './components/LocalEditingDialog';
@@ -123,12 +124,13 @@ export function App() {
     );
 
   const save = (input: MaterialInput) => {
+    const saveHint = materialState.exampleMode ? '請按「儲存範例」保留在此分頁。' : '請按 Save Database 寫入資料庫。';
     if (editing && editing !== 'new') {
       update(editing.id, input);
-      setNotice(`已更新 ${input.name} 草稿；請按 Save Database 寫入資料庫。`);
+      setNotice(`已更新 ${input.name} 草稿；${saveHint}`);
     } else {
       add(input);
-      setNotice(`已新增 ${input.name} 草稿；請按 Save Database 寫入資料庫。`);
+      setNotice(`已新增 ${input.name} 草稿；${saveHint}`);
     }
     setEditing(null);
   };
@@ -156,6 +158,15 @@ export function App() {
         onHelp={() => setDialog('help')}
         onAdd={() => requestEdit(() => setEditing('new'))}
       />
+      {materialState.exampleMode && <section className="orthotropic-example-banner" aria-label="FR4 獨立範例">
+        <div><strong>FR4 Orthotropic 獨立範例</strong><p>可新增、編輯與比較；儲存僅限此分頁，重新整理會保留。原始 materials.json 與 FR4 density 不受影響。</p></div>
+        <div className="orthotropic-example-actions">
+          <button className="btn" disabled={!materials.some(m => m.id === EXAMPLE_ID)} onClick={() => { setEditing(null); setDetailId(EXAMPLE_ID); }}>查看範例</button>
+          <button className="btn" disabled={!materials.some(m => m.id === EXAMPLE_ID)} onClick={() => { setDetailId(null); setEditing(materials.find(m => m.id === EXAMPLE_ID)!); }}>編輯範例</button>
+          <button className="btn" onClick={() => { setEditing(null); setDetailId(null); setSelected(materials.filter(m => m.id === EXAMPLE_ID || m.name === 'SGCC').map(m => m.id)); setView('compare'); }}>Mixed Compare</button>
+          <a className="btn" href={import.meta.env.BASE_URL}>離開範例</a>
+        </div>
+      </section>}
       <div className="workspace-shell">
         <Sidebar
           materials={materials}

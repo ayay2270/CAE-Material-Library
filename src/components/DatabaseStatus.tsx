@@ -4,6 +4,7 @@ import { UNSUPPORTED_MESSAGE } from '../lib/browserDatabase';
 import { useEffect, useRef, useState } from 'react';
 import { downloadDeployedDatabase } from '../lib/deployedDatabaseDownload';
 import { DatabaseOnboardingDialog } from './DatabaseOnboardingDialog';
+import { EXAMPLE_QUERY } from '../lib/orthotropicExample';
 
 type State = ReturnType<typeof useMaterials>;
 const clock = (value: number | null) => value === null ? '' : new Date(value).toLocaleTimeString('zh-TW', { hour12: false });
@@ -23,6 +24,10 @@ export function DatabaseStatus({ state }: { state: State }) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const openHelp = () => { if (menu.current) menu.current.open = false; setHelpOpen(true); };
+  if (state.exampleMode) return <div className="database-status">
+    <span role="status">獨立範例 · {saveError ? '儲存失敗' : dirty ? '有未儲存變更' : lastSavedAt ? '已儲存在此分頁' : '僅此分頁'}</span>
+    <button className="btn" disabled={!dirty || saving} onClick={() => void saveDatabase()}>儲存範例</button>
+  </div>;
   return <><div className="database-status">
     <details className="database-status-menu" ref={menu} open={showOnboarding}>
       <summary>資料庫狀態 · {saving ? '儲存並驗證中' : saveError ? '儲存失敗' : dirty ? '有未儲存變更' : lastSavedAt ? '儲存成功' : label}</summary>
@@ -36,6 +41,7 @@ export function DatabaseStatus({ state }: { state: State }) {
             <button className="btn primary" disabled={!fileSupported || fileStatus === 'checking' || saving} onClick={() => void connectFile()}>{fileStatus === 'permission' ? '重新授權本機資料庫' : '連結本機資料庫'}</button>
           </div>
           <p>若只需要查看或備份資料，可直接下載目前線上資料庫。</p>
+          <p><a href={`?${EXAMPLE_QUERY}`}>開啟 FR4 Orthotropic 獨立範例</a>，免選檔即可試用新增、編輯與比較。</p>
           <p>若要新增、編輯並上傳到 GitHub，請先把專案複製到電腦，再連結專案中的：<code className="database-file-path">src/data/materials.json</code>第一次設定請查看下方步驟。</p>
           <p className="muted small">下載的 JSON 是獨立備份，不會建立 Git 儲存庫，也不會自動 Commit / Push。</p>
         </section> : <dl>
