@@ -13,7 +13,7 @@
 }
 .app-header {
   position: relative;
-  height: 131px;
+  height: 86px;
   padding: 0 20px;
   background: #fff;
   color: #1b293b;
@@ -31,8 +31,8 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* same as background-size: cover; never stretched */
-  object-position: center 70%;
+  object-fit: cover;
+  object-position: center 25%;
   opacity: 0.9;
 }
 .header-landscape:after {

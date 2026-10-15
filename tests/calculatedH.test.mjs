@@ -25,7 +25,7 @@ const result = await build({
     export const compare = materials => renderToStaticMarkup(<ComparePage materials={materials} selected={materials.map(m => m.id)} units={units} onToggle={noop} onClear={noop} onBack={noop} onOpen={noop} />);
   `, resolveDir: fileURLToPath(new URL('../', import.meta.url)), loader: 'tsx' },
   bundle: true, write: false, platform: 'node', format: 'cjs', jsx: 'automatic',
-  loader: { '.css': 'empty', '.png': 'dataurl', '.jpg': 'dataurl', '.webp': 'dataurl' },
+  loader: { '.css': 'empty', '.png': 'dataurl', '.jpg': 'dataurl' },
   define: { 'import.meta.env.DEV': 'false', 'import.meta.env.BASE_URL': '"/CAE-Material-Library-V2-Preview/"', 'process.env.NODE_ENV': '"production"' },
 });
 const compiled = { exports: {} };
