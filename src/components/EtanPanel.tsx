@@ -38,6 +38,7 @@ function Result({ solver, card, symbol, description, value, issue, testId }: {
       <strong className={`solver-bridge-value${value == null ? ' unavailable' : ''}`} data-testid={testId}>
         {value == null ? 'Not available' : <>{value.toFixed(2)}<small> MPa</small></>}
       </strong>
+      {value != null && <span className="solver-bridge-status">Calculated</span>}
       {issue && <span className={`solver-bridge-issue${issue.warn ? ' warn' : ''}`}>{issue.warn && <span aria-hidden="true">⚠ </span>}{issue.text}</span>}
     </section>
   );
@@ -54,7 +55,7 @@ export function EtanPanel({ material }: { material: Material }) {
     <section className="solver-bridge" aria-label="Solver Plasticity">
       <header className="solver-bridge-title">
         <h3>Solver Plasticity</h3>
-        <span>Auto-calculated</span>
+        <span>Calculated from material properties</span>
       </header>
       <div className="solver-bridge-card">
         <div className="solver-bridge-hero" role="status" aria-live="polite" aria-atomic="true">

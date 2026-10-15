@@ -66,8 +66,9 @@ test('drawer Basic Properties: open 3 × 2 grid without H; H and ETAN are calcul
     for (const legacy of ['Stored', 'stored', 'reference only', 'Estimate', 'mismatch']) assert.ok(!html.includes(legacy), `${name}: ${legacy}`);
     assert.ok(!new RegExp(material.etan.toFixed(2).replace('.', '\\.') + '(?!\\d)').test(html), `${name}: legacy stored H value is not shown`);
     const solver = solverText(html);
-    for (const text of ['Solver Plasticity', 'Auto-calculated', 'OptiStruct', 'MAT1 + MATS1', 'LS-DYNA', '*MAT_003', 'Work hardening slope', 'Tangent modulus', 'ETAN = E × H / (E + H)']) assert.ok(solver.includes(text), text);
+    for (const text of ['Solver Plasticity', 'Calculated from material properties', 'OptiStruct', 'MAT1 + MATS1', 'LS-DYNA', '*MAT_003', 'Work hardening slope', 'Tangent modulus', 'ETAN = E × H / (E + H)']) assert.ok(solver.includes(text), text);
     assert.ok(!solver.includes('⚠') && !solver.includes('Not available'), `${name}: no warning for a normal calculation`);
+    assert.equal((html.match(/class="solver-bridge-status">Calculated</g) ?? []).length, 2, `${name}: Calculated under H and ETAN`);
     assert.ok(!html.includes('<details class="etan-auto-details" open'), 'details stay collapsed');
   }
   assert.equal(testIdText(ui.drawer(byName('SGCC')), 'hardening-h-result'), '740.07 MPa');
@@ -92,6 +93,7 @@ test('drawer names missing or invalid H inputs and explains that ETAN requires H
   const solver = solverText(fr4);
   assert.ok(solver.includes('Missing: Ultimate Stress, Elongation'));
   assert.ok(solver.includes('Requires H'));
+  assert.ok(!fr4.includes('solver-bridge-status'), 'no Calculated status when H cannot be calculated');
   assert.ok(fr4.includes('solver-bridge-formula unavailable'));
   assert.ok(fr4.includes('H cannot be calculated. Missing: Ultimate Stress, Elongation'));
   assert.ok(solverText(ui.drawer(byName('ChipSet'))).includes('Missing: Yield Stress, Ultimate Stress, Elongation'));
