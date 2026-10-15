@@ -106,3 +106,10 @@ Two existing standalone UI scripts have baseline failures on unchanged commit
 UI includes the calculated reference; `densityTuner.ui.cjs:113` expects an unsaved
 draft to survive reload even though persistence requires Save Database. These
 scripts are outside the npm test suite and were not changed by this feature.
+# Online independent example
+
+Open `?example=fr4-orthotropic` on the deployed site, or use the link in the unlinked database panel. The explicit example banner offers Drawer, Edit and SGCC + FR4 Mixed Compare shortcuts; the existing Add button uses the same material form.
+
+This mode clones the committed database and adds a separate `example-fr4-orthotropic` record. Every original record, including legacy FR4 and its density, is retained. The supplied nine constants are sample values, not confirmed material specifications. No schema migration is required.
+
+“儲存範例” validates and writes only the dedicated `cae-material-library:fr4-example:v1` sessionStorage key. Refresh restores saved edits in that tab. Closing the tab normally clears the sandbox (browser session restoration may retain it). Exiting the example opens the normal library; no example is loaded there. The example bypasses remembered file handles, local dev API loading/writing, legacy recovery and GitHub sync. It never writes the repository or a linked file. Unsaved drafts still trigger the existing leave warning, and JSON export remains available.

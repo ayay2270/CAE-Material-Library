@@ -1,0 +1,36 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { validateDatabase } from '../src/lib/database-schema.mjs';
+import { createOrthotropicExample, EXAMPLE_ID, EXAMPLE_STORAGE_KEY, isOrthotropicExample, readOrthotropicExample, saveOrthotropicExample } from '../src/lib/orthotropicExample';
+
+const master = validateDatabase(JSON.parse(await readFile(new URL('../src/data/materials.json', import.meta.url), 'utf8')));
+test('example is opt-in; original records and FR4 density are preserved in a separate copy', () => {
+  assert.equal(isOrthotropicExample(''), false);
+  assert.equal(isOrthotropicExample('?example=other'), false);
+  assert.equal(isOrthotropicExample('?example=fr4-orthotropic'), true);
+  const before = JSON.stringify(master);
+  const example = createOrthotropicExample(master);
+  assert.equal(JSON.stringify(master), before);
+  assert.deepEqual(example.materials.slice(0, master.materials.length), master.materials);
+  const fr4 = example.materials.find(m => m.id === EXAMPLE_ID)!;
+  assert.equal(fr4.density, master.materials.find(m => m.name === 'FR4')!.density);
+  assert.equal(fr4.materialModel, 'Orthotropic');
+  assert.equal(Object.keys(fr4.orthotropic!).length, 9);
+  fr4.orthotropic!.e1 = 23000;
+  assert.equal(createOrthotropicExample(master).materials.find(m => m.id === EXAMPLE_ID)!.orthotropic!.e1, 22000);
+});
+test('example edits round-trip using only the dedicated session key; corrupt storage falls back safely', () => {
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
+  const example = readOrthotropicExample(master, storage);
+  example.materials.find(m => m.id === EXAMPLE_ID)!.orthotropic!.e3 = 4500;
+  saveOrthotropicExample(example, storage);
+  assert.deepEqual([...values.keys()], [EXAMPLE_STORAGE_KEY]);
+  assert.deepEqual(readOrthotropicExample(master, storage), example);
+  values.set(EXAMPLE_STORAGE_KEY, '{bad JSON');
+  assert.deepEqual(readOrthotropicExample(master, storage), createOrthotropicExample(master));
+  const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
+  assert.deepEqual(readOrthotropicExample(master, blocked), createOrthotropicExample(master));
+  assert.throws(() => saveOrthotropicExample(example, blocked), /blocked/);
+});
