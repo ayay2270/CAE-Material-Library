@@ -234,17 +234,18 @@ const os = require('node:os');
     await form.getByRole('button', { name: '取消', exact: true }).click();
     await drawer.getByRole('button', { name: '關閉', exact: true }).click();
     await page.setViewportSize({ width: 1440, height: 1000 });
-    // Metal's real form and solver results remain active and use supplied H.
+    // Metal's real form stays active; the drawer recalculates H and ETAN from the edited properties.
     await page.getByRole('article', { name: 'SGCC 材料卡片', exact: true }).getByRole('button', { name: 'SGCC', exact: true }).click();
-    assert.equal(await page.getByTestId('hardening-h-result').textContent(), '740.06 MPa');
-    assert.equal(await page.getByTestId('tangent-etan-result').textContent(), '737.33 MPa');
+    assert.equal(await page.getByTestId('hardening-h-result').textContent(), '740.07 MPa');
+    assert.equal(await page.getByTestId('tangent-etan-result').textContent(), '737.34 MPa');
     await drawer.getByRole('button', { name: '編輯', exact: true }).click();
     form = page.getByRole('dialog', { name: '編輯 SGCC', exact: true });
-    await form.getByLabel(/^H \(MATS1\)/).fill('300');
     await form.getByLabel(/^Yield Stress/).fill('300');
     await form.getByRole('button', { name: '儲存變更', exact: true }).click();
-    assert.equal(await page.getByTestId('hardening-h-result').textContent(), '300.00 MPa');
-    assert.equal(await page.getByTestId('tangent-etan-result').textContent(), '299.55 MPa');
+    // Independent bilinear oracle: E = 200000, σy = 300, σu = 356, elongation = 40 %.
+    const hardening = (356 * 1.4 - 300 * (1 + 300 / 200000)) / (Math.log1p(0.4) - Math.log1p(300 / 200000));
+    assert.equal(await page.getByTestId('hardening-h-result').textContent(), `${hardening.toFixed(2)} MPa`);
+    assert.equal(await page.getByTestId('tangent-etan-result').textContent(), `${(200000 * hardening / (200000 + hardening)).toFixed(2)} MPa`);
     assert.equal(await page.getByTestId('mat003-sigy').textContent(), '300');
     assert.deepEqual(errors, []);
     assert.equal(await fs.readFile(seedPath, 'utf8'), seedText, 'UI fixtures must not change Git seed JSON');

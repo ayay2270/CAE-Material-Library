@@ -16,6 +16,8 @@ const result = await build({
     import { MaterialDrawer } from './src/components/MaterialDrawer';
     import { LocalEditingDialog } from './src/components/LocalEditingDialog';
     export { requestLocalEditing } from './src/lib/localEditing';
+    export { calcHardeningSlope } from './src/lib/etan';
+    export { hToEtan } from './src/lib/solverPlasticity';
     export const library = () => renderToStaticMarkup(<App />);
     export const solver = (inputs, providedH) => renderToStaticMarkup(<SolverPlasticityResults inputs={inputs} providedH={providedH} />);
     export const imports = (database, editable, dirty = false) => renderToStaticMarkup(<ImportExportDialog editable={editable} dirty={dirty} database={database} materials={database.materials} visibleRows={database.materials} onImport={()=>({added:0,updated:0,unchanged:0})} onReset={()=>{}} onRecover={()=>{}} onLegacy={()=>{}} onReadOnly={()=>{}} onClose={()=>{}} />);
@@ -46,6 +48,57 @@ test('no stored H renders calculated active H and its conversion source; invalid
   const incomplete = ui.solver({ ...sgcc, elongation: null }, sgcc.etan);
   assert.ok(incomplete.includes('Calculated H unavailable'));
   assert.ok(incomplete.includes('737.33 MPa'));
+});
+
+const byName = name => database.materials.find(material => material.name === name);
+const testIdText = (html, id) => html.match(new RegExp(`data-testid="${id}"[^>]*>(.*?)</(?:strong|td)>`))[1].replace(/<[^>]+>/g, '');
+const solverText = html => html.slice(html.indexOf('class="solver-bridge"'), html.indexOf('<details')).replace(/<[^>]+>/g, ' ');
+
+test('drawer Basic Properties: open 3 × 2 grid without H; H and ETAN are calculated, never stored', () => {
+  for (const name of ['SGCC', 'Al7050']) {
+    const material = byName(name);
+    const html = ui.drawer(material);
+    const grid = html.slice(html.indexOf('prop-grid'), html.indexOf('</dl>'));
+    assert.deepEqual([...grid.matchAll(/<dt>(.*?)<\/dt>/g)].map(m => m[1]), ['Density', 'Young&#x27;s Modulus', 'Poisson&#x27;s Ratio', 'Yield Stress', 'Ultimate Stress', 'Elongation']);
+    const h = ui.calcHardeningSlope(material);
+    assert.notEqual(h.toFixed(2), material.etan.toFixed(2), `${name}: the legacy stored H must differ for this check`);
+    assert.equal(testIdText(html, 'hardening-h-result'), `${h.toFixed(2)} MPa`);
+    assert.equal(testIdText(html, 'tangent-etan-result'), `${ui.hToEtan(material.youngsModulus, h).toFixed(2)} MPa`);
+    for (const legacy of ['Stored', 'stored', 'reference only', 'Estimate', 'mismatch']) assert.ok(!html.includes(legacy), `${name}: ${legacy}`);
+    assert.ok(!new RegExp(material.etan.toFixed(2).replace('.', '\\.') + '(?!\\d)').test(html), `${name}: legacy stored H value is not shown`);
+    const solver = solverText(html);
+    for (const text of ['Solver Plasticity', 'Auto-calculated', 'OptiStruct', 'MAT1 + MATS1', 'LS-DYNA', '*MAT_003', 'Work hardening slope', 'Tangent modulus', 'ETAN = E × H / (E + H)']) assert.ok(solver.includes(text), text);
+    assert.ok(!solver.includes('⚠') && !solver.includes('Not available'), `${name}: no warning for a normal calculation`);
+    assert.ok(!html.includes('<details class="etan-auto-details" open'), 'details stay collapsed');
+  }
+  assert.equal(testIdText(ui.drawer(byName('SGCC')), 'hardening-h-result'), '740.07 MPa');
+  assert.equal(testIdText(ui.drawer(byName('Al7050')), 'hardening-h-result'), '1196.42 MPa');
+  assert.equal(testIdText(ui.drawer(byName('Al7050')), 'tangent-etan-result'), '1176.59 MPa');
+});
+
+test('drawer solver mapping pairs equivalent OptiStruct and LS-DYNA fields on the same row', () => {
+  const html = ui.drawer(byName('SGCC'));
+  const rows = [...html.matchAll(/<tr class="[^"]*"><th scope="row">(\w+)<\/th><td class="value">([^<]*)<\/td><td class="unit">([^<]*)<\/td><td aria-hidden="true"><\/td><th scope="row">(\w+)<\/th><td class="value"[^>]*>([^<]*)<\/td>/g)]
+    .map(([, os, osValue, unit, dyna, dynaValue]) => [os, osValue, unit, dyna, dynaValue]);
+  assert.deepEqual(rows, [
+    ['E', '200,000', 'MPa', 'E', '200,000'], ['NU', '0.3', '', 'PR', '0.3'],
+    ['RHO', '7.82E-9', 't/mm³', 'RO', '7.82E-9'], ['LIMIT1', '250', 'MPa', 'SIGY', '250'],
+  ]);
+});
+
+test('drawer names missing or invalid H inputs and explains that ETAN requires H', () => {
+  const fr4 = ui.drawer(byName('FR4'));
+  assert.equal(testIdText(fr4, 'hardening-h-result'), 'Not available');
+  assert.equal(testIdText(fr4, 'tangent-etan-result'), 'Not available');
+  const solver = solverText(fr4);
+  assert.ok(solver.includes('Missing: Ultimate Stress, Elongation'));
+  assert.ok(solver.includes('Requires H'));
+  assert.ok(fr4.includes('solver-bridge-formula unavailable'));
+  assert.ok(fr4.includes('H cannot be calculated. Missing: Ultimate Stress, Elongation'));
+  assert.ok(solverText(ui.drawer(byName('ChipSet'))).includes('Missing: Yield Stress, Ultimate Stress, Elongation'));
+  const invalid = solverText(ui.drawer({ ...byName('SGCC'), ultimateStress: 200 }));
+  assert.ok(invalid.includes('Invalid: Ultimate Stress is below Yield Stress'));
+  assert.ok(invalid.includes('Requires H'));
 });
 
 test('production library, detail and import dialog retain visible Add/Edit/Delete/Import controls', () => {

@@ -92,3 +92,50 @@
   .etan-page .etan-pick select { width: 100%; min-width: 0; }
 }
 .solver-reference-estimate { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; }
+
+/* ---------- Material drawer: Solver Bridge ---------- */
+.solver-bridge { margin-top: 16px; }
+.solver-bridge-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 2px 8px; }
+.solver-bridge-title h3 { margin: 0; font-size: 13.5px; color: var(--navy); }
+.solver-bridge-title span { font-size: 11.5px; color: var(--muted); }
+.solver-bridge-card { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.solver-bridge-hero { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; padding: 10px 14px 12px; background: #eef4fe; }
+.solver-bridge-result { min-width: 0; }
+.solver-bridge-result h4 { margin: 0 0 6px; font-size: 12.5px; color: var(--navy); }
+.solver-bridge-result h4 span { font-size: 11px; font-weight: 400; color: var(--muted); }
+.solver-bridge-symbol { display: block; font: 700 12px var(--mono); color: var(--navy); }
+.solver-bridge-value { display: block; margin: 2px 0 3px; font: 600 27px/1.2 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--navy); overflow-wrap: anywhere; }
+.solver-bridge-value small { font: 400 12.5px var(--font); letter-spacing: 0; color: var(--muted); }
+.solver-bridge-value.unavailable { font: 400 15px/1.85 var(--font); letter-spacing: 0; color: var(--muted); }
+.solver-bridge-desc { display: block; font-size: 11.5px; color: var(--ink-2); }
+.solver-bridge-issue { display: block; margin-top: 5px; font-size: 11.5px; line-height: 1.35; color: var(--ink-2); }
+.solver-bridge-issue.warn { color: #8a5a12; }
+.solver-bridge-issue.warn span { color: var(--amber); }
+.solver-bridge .solver-bridge-formula { margin: 0; padding: 7px 14px 9px; background: #eef4fe; border-top: 1px solid #dbe5f7; text-align: center; font: 12px var(--mono); color: var(--ink-2); }
+.solver-bridge .solver-bridge-formula.unavailable { color: #a7afbd; }
+.solver-bridge-map { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.solver-bridge-map col.kw { width: 64px; }
+.solver-bridge-map col.unit { width: 44px; }
+.solver-bridge-map col.gap { width: 28px; }
+.solver-bridge-map col:first-child { width: 78px; } /* 14px card padding + keyword */
+.solver-bridge-map col:last-child { width: 58px; } /* unit + 14px card padding */
+.solver-bridge-map thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.solver-bridge-map tbody th, .solver-bridge-map tbody td { padding: 7px 0; border-top: 1px solid #edf0f4; text-align: left; vertical-align: baseline; }
+.solver-bridge-map tbody tr:first-child > * { border-top-color: var(--line); }
+.solver-bridge-map tbody th { font: 700 12px var(--mono); color: var(--ink-2); }
+.solver-bridge-map tbody th:first-child { padding-left: 14px; }
+.solver-bridge-map td.value { text-align: right; font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
+.solver-bridge-map td.unit { padding-left: 6px; font-size: 11px; color: var(--muted); }
+.solver-bridge-map tr.missing td.value { color: #a7afbd; font-weight: 400; }
+.solver-bridge .etan-auto-details { margin: 6px 2px 0; }
+@media (max-width: 600px) {
+  .solver-bridge-hero { column-gap: 16px; padding: 10px; }
+  .solver-bridge-value { font-size: 21px; }
+  .solver-bridge-map { font-size: 12px; }
+  .solver-bridge-map col.kw { width: 50px; }
+  .solver-bridge-map col.unit { width: 36px; }
+  .solver-bridge-map col.gap { width: 16px; }
+  .solver-bridge-map col:first-child { width: 60px; }
+  .solver-bridge-map col:last-child { width: 46px; }
+  .solver-bridge-map tbody th:first-child { padding-left: 10px; }
+}

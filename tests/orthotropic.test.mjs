@@ -143,11 +143,13 @@ test('Orthotropic Form has nine constants and optional strengths without E/ν or
   assert.doesNotMatch(ui.form({ ...fr4, category: 'Plastic' }), /Orthotropic Elastic Properties/);
 });
 
-test('Metal keeps original Yield/H inputs and drawer ETAN results', () => {
+test('Metal keeps original Yield/H form inputs; drawer shows calculated H and ETAN results', () => {
   const form = ui.form(metal);
   for (const label of ['Yield Stress', 'H (MATS1)', 'Ultimate Stress', 'Elongation']) assert.ok(form.includes(label));
-  assert.match(ui.drawer(metal), /737.33 MPa/);
-  assert.match(ui.drawer(metal), /740.06 MPa/);
+  const drawer = ui.drawer(metal);
+  assert.match(drawer, /data-testid="hardening-h-result">740.07<small> MPa/);
+  assert.match(drawer, /data-testid="tangent-etan-result">737.34<small> MPa/);
+  assert.doesNotMatch(drawer, /740\.06(?!\d)|Stored H/); // Legacy stored H is not used by the drawer.
 });
 
 test('Orthotropic Drawer shows density and complete constants, conditionally shows strengths', () => {

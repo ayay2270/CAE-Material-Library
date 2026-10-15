@@ -70,15 +70,13 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
         {tab === 'props' && (
           <>
           {m.category === 'Composite' && <p className="muted">{m.subCategory ? `${m.subCategory} · ` : ''}{isOrthotropic(m) ? 'Orthotropic' : 'Isotropic Equivalent'}</p>}
-          <dl className="prop-grid">
-            {PROPS.filter(p => !isOrthotropic(m) || p.key === 'density').map((p) => {
+          {/* H is calculated in the Solver Plasticity section, so the stored H field is not listed here. */}
+          <dl className="prop-grid prop-grid-open">
+            {PROPS.filter(p => p.key !== 'etan' && (!isOrthotropic(m) || p.key === 'density')).map((p) => {
               const v = m[p.key];
               return (
                 <div key={p.key} className={v === null ? 'missing' : ''}>
-                  <dt>
-                    {p.label}
-                    {p.optional && <small className="muted"> (optional)</small>}
-                  </dt>
+                  <dt>{p.label}</dt>
                   <dd>
                     {formatValue(p.key, v, units)}
                     {v !== null && unitFor(p, units) !== '—' && <small>{unitFor(p, units)}</small>}
