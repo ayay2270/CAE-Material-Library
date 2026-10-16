@@ -13,12 +13,11 @@ import { useGitHubSync } from './useGitHubSync';
 import { isOrthotropicExample, readOrthotropicExample, saveOrthotropicExample } from './orthotropicExample';
 import { readSupabaseDatabase } from './supabaseDatabase';
 
-// Direct member access lets Vite replace an absent flag with undefined so the reader import can be dropped.
-// The typeof guard avoids evaluating a missing env object in non-Vite bundles.
-const materialDataSource = typeof import.meta.env === 'object' && import.meta.env
-  ? import.meta.env.VITE_MATERIAL_DATA_SOURCE
-  : undefined;
-const supabaseReadOnly = materialDataSource === 'supabase';
+// The comparison stays in the true branch so a non-supabase literal makes both sides false
+// and the reader import can be dropped. A missing env object never evaluates the member.
+const supabaseReadOnly = import.meta.env
+  ? import.meta.env.VITE_MATERIAL_DATA_SOURCE === 'supabase'
+  : false;
 const readSupabaseWhenEnabled = supabaseReadOnly ? readSupabaseDatabase : null;
 
 function newId(): string {
