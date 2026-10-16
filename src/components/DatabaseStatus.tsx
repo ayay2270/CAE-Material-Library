@@ -28,6 +28,17 @@ export function DatabaseStatus({ state }: { state: State }) {
     <span role="status">獨立範例 · {saveError ? '儲存失敗' : dirty ? '有未儲存變更' : lastSavedAt ? '已儲存在此分頁' : '僅此分頁'}</span>
     <button className="btn" disabled={!dirty || saving} onClick={() => void saveDatabase()}>儲存範例</button>
   </div>;
+  if (state.dataSource === 'supabase') {
+    const supabaseLabel = state.supabaseStatus === 'ready'
+      ? '資料來源 · Supabase（唯讀）'
+      : state.supabaseStatus === 'error'
+        ? '資料來源 · Supabase（讀取失敗）'
+        : '資料來源 · Supabase（讀取中）';
+    return <div className="database-status">
+      <span role="status">{supabaseLabel}</span>
+      {state.supabaseStatus === 'error' && state.supabaseError ? <span role="alert">{state.supabaseError}</span> : null}
+    </div>;
+  }
   return <><div className="database-status">
     <details className="database-status-menu" ref={menu} open={showOnboarding}>
       <summary>資料庫狀態 · {saving ? '儲存並驗證中' : saveError ? '儲存失敗' : dirty ? '有未儲存變更' : lastSavedAt ? '儲存成功' : label}</summary>

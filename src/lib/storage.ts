@@ -11,6 +11,15 @@ import { authorizeDatabaseFile, databaseErrorChinese, databaseIsDirty, pickDatab
 import { forgetHandle, getRememberedHandle, rememberHandle } from './fileHandleStore';
 import { useGitHubSync } from './useGitHubSync';
 import { isOrthotropicExample, readOrthotropicExample, saveOrthotropicExample } from './orthotropicExample';
+import { readSupabaseDatabase } from './supabaseDatabase';
+
+// Direct member access lets Vite replace an absent flag with undefined so the reader import can be dropped.
+// The typeof guard avoids evaluating a missing env object in non-Vite bundles.
+const materialDataSource = typeof import.meta.env === 'object' && import.meta.env
+  ? import.meta.env.VITE_MATERIAL_DATA_SOURCE
+  : undefined;
+const supabaseReadOnly = materialDataSource === 'supabase';
+const readSupabaseWhenEnabled = supabaseReadOnly ? readSupabaseDatabase : null;
 
 function newId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -44,6 +53,7 @@ export function describeChanges(before: Material, after: MaterialInput): string 
 
 export function useMaterials() {
   const [exampleMode] = useState(() => typeof window !== 'undefined' && isOrthotropicExample(window.location.search));
+  const supabaseActive = supabaseReadOnly && !exampleMode;
   const [initial] = useState(() => {
     const master = committedDatabase();
     // Accessing sessionStorage itself can fail in restricted browsers.
@@ -57,7 +67,7 @@ export function useMaterials() {
   const latest = useRef(draft);
   latest.current = draft;
   const [saved, setSaved] = useState(initial);
-  const [fileSupported] = useState(() => !exampleMode && supportsFileDatabase());
+  const [fileSupported] = useState(() => !exampleMode && !supabaseActive && supportsFileDatabase());
   const [fileStatus, setFileStatus] = useState<'unlinked' | 'checking' | 'permission' | 'linked' | 'unsupported'>(fileSupported ? 'unlinked' : 'unsupported');
   const fileSession = useRef<FileSession | null>(null);
   const pendingHandle = useRef<DatabaseFileHandle | null>(null);
@@ -73,10 +83,12 @@ export function useMaterials() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const connection = useRef({ revision: '', token: '' });
   const [legacy, setLegacy] = useState<LegacyRecovery | null>(null);
+  const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(supabaseActive ? 'loading' : 'idle');
+  const [supabaseError, setSupabaseError] = useState<string | null>(null);
   const indexes = useMemo(() => deriveIndexes(draft.materials, draft.indexes), [draft]);
-  const editable = exampleMode || fileStatus === 'linked' || (LOCAL_EDITOR && ready && !fileSession.current);
+  const editable = !supabaseActive && (exampleMode || fileStatus === 'linked' || (LOCAL_EDITOR && ready && !fileSession.current));
   const dirty = databaseIsDirty({ ...draft, indexes }, saved);
-  const github = useGitHubSync(saved, !exampleMode && (fileStatus === 'linked' || (LOCAL_EDITOR && ready)), saveSequence);
+  const github = useGitHubSync(saved, !supabaseActive && !exampleMode && (fileStatus === 'linked' || (LOCAL_EDITOR && ready)), saveSequence);
   const applyFile = (session: FileSession) => {
     fileSession.current = session; pendingHandle.current = session.handle;
     latest.current = session.database; setDraft(session.database); setSaved(session.database);
@@ -89,8 +101,8 @@ export function useMaterials() {
     setDraft(latest.current);
   };
   useEffect(() => {
-    // Do not restore remembered files, call the dev writer, or recover legacy storage in the sandbox.
-    if (exampleMode) return;
+    // Example mode and Supabase read-only mode skip the dev writer, remembered files, and legacy recovery.
+    if (exampleMode || supabaseActive) return;
     let cancelled = false;
     const version = fileGeneration.current;
     const load = async () => {
@@ -121,7 +133,29 @@ export function useMaterials() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [initial, exampleMode]);
+  }, [initial, exampleMode, supabaseActive]);
+  useEffect(() => {
+    if (!supabaseActive) return;
+    let cancelled = false;
+    setSupabaseStatus('loading');
+    setSupabaseError(null);
+    void (async () => {
+      try {
+        if (!readSupabaseWhenEnabled) throw new Error('Supabase 資料來源未啟用。');
+        const database = await readSupabaseWhenEnabled();
+        if (cancelled) return;
+        latest.current = database;
+        setDraft(database);
+        setSaved(database);
+        setSupabaseStatus('ready');
+      } catch (error) {
+        if (cancelled) return;
+        setSupabaseStatus('error');
+        setSupabaseError(error instanceof Error && error.message ? error.message : 'Supabase 讀取失敗。');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [supabaseActive]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
@@ -130,7 +164,7 @@ export function useMaterials() {
   }, [dirty]);
   const assertEditor = () => { if (!editable) throw new Error('資料庫尚未就緒，或目前為唯讀模式。'); };
   const connectFile = async (forcePick = false) => {
-    if (exampleMode) return;
+    if (exampleMode || supabaseActive) return;
     if (savingRef.current || fileStatus === 'checking') return;
     if (dirty && (forcePick || fileStatus !== 'permission')) { setFileError('有未儲存變更，請先儲存或匯出草稿並取消未儲存變更，再連結其他檔案。'); return; }
     ++fileGeneration.current;
@@ -159,13 +193,14 @@ export function useMaterials() {
     }
   };
   const reloadFile = async () => {
-    if (!fileSession.current || savingRef.current) return;
+    if (supabaseActive || !fileSession.current || savingRef.current) return;
     if (dirty) { setFileError('有未儲存變更，請先儲存或匯出草稿並取消變更，再重新讀取。'); return; }
     setFileError(null);
     try { applyFile(await readDatabaseFile(fileSession.current.handle)); }
     catch (error) { setFileError(databaseErrorChinese(error)); if (error instanceof Error && error.name === 'NotAllowedError') setFileStatus('permission'); }
   };
   const disconnectFile = async () => {
+    if (supabaseActive) return;
     if (dirty || savingRef.current) { setFileError('請先儲存或匯出草稿並取消未儲存變更，再中斷連結。'); return; }
     try { await forgetHandle(); }
     catch { setFileError('無法移除已記住的連結，請稍後再試。'); return; }
@@ -207,6 +242,7 @@ export function useMaterials() {
     latest.current = recoverLegacy(legacy); setDraft(latest.current); dismissLegacy();
   };
   const showLegacy = () => {
+    if (supabaseActive) return;
     try { setLegacy(detectLegacy(localStorage, saved, true)); } catch { setLegacy(null); }
   };
   const importDatabase = (value: unknown) => {
@@ -282,5 +318,8 @@ export function useMaterials() {
   return { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
     editable, dirty, ready, saving, saveError, saveDatabase, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database: draft,
     fileSupported, fileStatus, fileError, fileName: fileSession.current?.handle.name ?? pendingHandle.current?.name ?? null, connectFile, reloadFile, disconnectFile,
-    lastReadAt, lastSavedAt, backupText, github, exampleMode, developerMode: !exampleMode && LOCAL_EDITOR && ready && !fileSession.current };
+    lastReadAt, lastSavedAt, backupText, github, exampleMode, developerMode: !supabaseActive && !exampleMode && LOCAL_EDITOR && ready && !fileSession.current,
+    dataSource: supabaseActive ? 'supabase' as const : 'legacy' as const,
+    supabaseStatus: supabaseActive ? supabaseStatus : 'idle' as const,
+    supabaseError: supabaseActive ? supabaseError : null };
 }
