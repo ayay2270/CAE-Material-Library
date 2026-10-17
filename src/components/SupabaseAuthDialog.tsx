@@ -50,7 +50,7 @@ export function SupabaseAuthDialog({
           void submit();
         }}
       >
-        <p className="form-hint">登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料。材料曲線、CSV 匯入與分類／來源管理目前仍為唯讀。</p>
+        <p className="form-hint">登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料，並更新材料曲線。CSV 匯入與分類／來源管理目前仍為唯讀。</p>
         <label>
           電子郵件
           <input

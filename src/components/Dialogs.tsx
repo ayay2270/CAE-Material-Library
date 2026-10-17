@@ -181,8 +181,8 @@ export type HelpMode = 'supabase' | 'legacy' | 'example';
 export function helpModeCopy(mode: HelpMode): { view: string; storage: string } {
   if (mode === 'supabase') {
     return {
-      view: '點選任一列開啟詳細資料（基本性質、材料曲線、來源與備註、歷史記錄）。已確認的 Admin 可直接新增、編輯與刪除材料。',
-      storage: '目前材料資料來自 Supabase，所有人都可以瀏覽。已確認的 Admin 新增、編輯與刪除材料時會直接寫入 Supabase，不需要按 Save Database。材料曲線、CSV／JSON 寫入，以及分類與來源管理目前仍為唯讀。',
+      view: '點選任一列開啟詳細資料（基本性質、材料曲線、來源與備註、歷史記錄）。已確認的 Admin 可直接新增、編輯與刪除材料，並更新材料曲線。',
+      storage: '目前材料資料來自 Supabase，所有人都可以瀏覽。已確認的 Admin 新增、編輯、刪除材料，以及更新材料曲線時會直接寫入 Supabase，不需要按 Save Database。CSV／JSON 寫入，以及分類與來源管理目前仍為唯讀。',
     };
   }
   if (mode === 'example') {

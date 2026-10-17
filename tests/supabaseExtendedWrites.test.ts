@@ -209,11 +209,17 @@ test('extended RPC adapters stay out of the UI and the material CRUD module', as
   assert.equal(extended.includes('createMaterialLibraryClient'), true);
   assert.equal(extended.includes('signInWithPassword'), false);
   assert.equal(extended.includes('service_role'), false);
-  for (const source of [app, drawer, curveSection, sidebar, manager]) {
+  for (const source of [drawer, curveSection, sidebar, manager]) {
     assert.equal(source.includes('extendedMutations'), false);
     assert.equal(source.includes('supabaseExtendedWrites'), false);
     assert.equal(source.includes('updateSupabaseMaterialCurve'), false);
     assert.equal(source.includes('addSupabaseCategory'), false);
     assert.equal(source.includes('renameSupabaseSource'), false);
   }
+  assert.match(app, /extendedMutations\.saveCurve/);
+  assert.equal(app.includes('supabaseExtendedWrites'), false);
+  assert.equal(app.includes('updateSupabaseMaterialCurve'), false);
+  assert.equal(app.includes('addSupabaseCategory'), false);
+  assert.equal(app.includes('renameSupabaseSource'), false);
+  assert.equal(app.includes('indexWriteEnabledFor'), false);
 });

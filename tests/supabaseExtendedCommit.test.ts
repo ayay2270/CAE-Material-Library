@@ -341,7 +341,9 @@ test('storage keeps one write lock and does not let the UI reach extended mutati
   assert.match(storage, /return supabaseReadOnly \? \{ \.\.\.state, materialMutations, extendedMutations \} : state/);
   assert.equal(storage.includes('saveCurve(id: string, curve: StressStrainData)'), true);
   assert.equal(storage.includes('renameSource(oldName: string, newName: string)'), true);
-  assert.equal(app.includes('extendedMutations'), false);
-  assert.equal(app.includes('curveWriteEnabledFor'), false);
+  assert.match(app, /extendedMutations\.saveCurve\(detail\.id, data\)/);
+  assert.equal(app.includes('extendedMutations.addCategory'), false);
+  assert.equal(app.includes('extendedMutations.renameSource'), false);
+  assert.equal(app.includes('curveWriteEnabledFor'), true);
   assert.equal(app.includes('indexWriteEnabledFor'), false);
 });

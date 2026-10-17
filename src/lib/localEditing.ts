@@ -37,8 +37,8 @@ export function materialCrudEnabledFor(
 }
 
 /**
- * Curve writes stay closed in the UI.
- * Legacy/example follows storage `editable`. Supabase follows confirmed Admin only.
+ * Legacy/example follows storage `editable`.
+ * Supabase curve writes follow confirmed Admin only.
  */
 export function curveWriteEnabledFor(
   dataSource: 'supabase' | 'legacy',

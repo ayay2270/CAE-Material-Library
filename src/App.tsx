@@ -8,6 +8,7 @@ import {
   SUPABASE_MATERIAL_CRUD_DENIED,
   SUPABASE_WRITE_LATER,
   closeAfterDirectWrite,
+  curveWriteEnabledFor,
   materialCrudEnabledFor,
   requestMaterialCrud,
   requestMaterialMutation,
@@ -88,6 +89,7 @@ export function App() {
   const deleteLock = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const materialCrudEnabled = materialCrudEnabledFor(materialState.dataSource, editable, supabaseAdmin);
+  const curveWriteEnabled = curveWriteEnabledFor(materialState.dataSource, editable, supabaseAdmin);
 
   // Drop selections that no longer exist (deleted / reset).
   useEffect(() => {
@@ -212,7 +214,7 @@ export function App() {
   const showLocalEditing = () => setDialog('localEditing');
   const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
   const crudReadOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_MATERIAL_CRUD_DENIED : LOCAL_EDITING_HINT;
-  // Index, curve, CSV, and Save Database stay on the deferred Supabase gate.
+  // Index, CSV, JSON, and Save Database stay on the deferred Supabase gate.
   const requestEdit = (action: () => void) => requestMaterialMutation(
     materialState.dataSource, editable, action, showLocalEditing, showSupabaseReadOnly,
   );
@@ -351,13 +353,25 @@ export function App() {
         <MaterialDrawer
           editable={editable}
           materialCrudEnabled={materialCrudEnabled}
+          curveEditable={curveWriteEnabled}
+          curvePending={materialState.materialWriting}
           readOnlyTitle={crudReadOnlyTitle}
           material={detail}
           units={units}
           onClose={() => setDetailId(null)}
           onEdit={() => requestCrud(() => setEditing(detail))}
           onDelete={() => requestCrud(() => { setDeleteError(null); setDeleting(detail); })}
-          onSaveCurve={(data) => {
+          onSaveCurve={async (data) => {
+            if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
+              if (!('extendedMutations' in materialState) || !materialState.extendedMutations) return 'Supabase 曲線寫入未啟用。';
+              try {
+                await materialState.extendedMutations.saveCurve(detail.id, data);
+                setNotice(`已更新 Supabase 材料曲線：${detail.name}。`);
+                return null;
+              } catch (error) {
+                return error instanceof Error && error.message ? error.message : '曲線儲存失敗。';
+              }
+            }
             const error = setCurve(detail.id, data);
             if (!error) setNotice(`已更新 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
             return error;

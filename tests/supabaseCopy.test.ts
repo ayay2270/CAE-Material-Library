@@ -13,7 +13,7 @@ import {
 import { helpModeCopy } from '../src/components/Dialogs';
 
 const readyLabel = '資料來源 · Supabase';
-const loginCopy = '登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料。材料曲線、CSV 匯入與分類／來源管理目前仍為唯讀。';
+const loginCopy = '登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料，並更新材料曲線。CSV 匯入與分類／來源管理目前仍為唯讀。';
 const deferredCopy = '此功能在 Supabase 模式目前為唯讀，尚未開放寫入。';
 
 test('Supabase source label, login copy, and deferred copy are feature-scoped', async () => {
@@ -43,7 +43,7 @@ test('Supabase Admin material CRUD stays enabled while deferred writes stay clos
   const dialogs = await readFile(new URL('../src/components/Dialogs.tsx', import.meta.url), 'utf8');
   assert.match(app, /editable=\{materialCrudEnabled\}/);
   assert.match(app, /<MaterialDrawer[\s\S]*editable=\{editable\}[\s\S]*materialCrudEnabled=\{materialCrudEnabled\}/);
-  assert.match(drawer, /<StressStrainSection[^>]*editable=\{editable\}/);
+  assert.match(drawer, /<StressStrainSection[^>]*editable=\{curveEditable\}/);
   assert.match(app, /<ImportExportDialog[\s\S]*editable=\{editable\}/);
   assert.match(app, /readOnlyHint=\{materialState\.dataSource === 'supabase' \? SUPABASE_WRITE_LATER : undefined\}/);
   assert.match(dialogs, /\{editable && <input ref=\{fileRef\}/);
@@ -59,7 +59,9 @@ test('help copy follows the data source and leaves legacy local editing intact',
   assert.equal(supabase.includes('src/data/materials.json'), false);
   assert.equal(supabase.includes('直接寫入 Supabase'), true);
   assert.equal(supabase.includes('不需要按 Save Database'), true);
-  assert.equal(supabase.includes('材料曲線、CSV／JSON 寫入'), true);
+  assert.equal(supabase.includes('更新材料曲線'), true);
+  assert.equal(supabase.includes('CSV／JSON 寫入，以及分類與來源管理目前仍為唯讀'), true);
+  assert.equal(supabase.includes('材料曲線、CSV／JSON 寫入'), false);
   assert.equal(legacy.includes('src/data/materials.json'), true);
   assert.equal(legacy.includes('按 Save Database 寫入檔案'), true);
   assert.equal(legacy.includes('連結本機資料庫'), true);
