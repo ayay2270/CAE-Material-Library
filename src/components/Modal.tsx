@@ -11,18 +11,22 @@ interface Props {
   /** 'drawer' slides in from the right instead of centring. */
   variant?: 'modal' | 'drawer';
   labelledBy?: string;
+  /** Block overlay, Escape, and the header close control while a write is in flight. */
+  dismissDisabled?: boolean;
 }
 
-export function Modal({ title, onClose, children, footer, width = 520, variant = 'modal' }: Props) {
+export function Modal({ title, onClose, children, footer, width = 520, variant = 'modal', dismissDisabled = false }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
+  const dismissRef = useRef(dismissDisabled);
   closeRef.current = onClose;
+  dismissRef.current = dismissDisabled;
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !dismissRef.current) {
         e.stopPropagation();
         closeRef.current();
       }
@@ -35,7 +39,7 @@ export function Modal({ title, onClose, children, footer, width = 520, variant =
   }, []);
 
   return (
-    <div className={`overlay ${variant}`} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className={`overlay ${variant}`} onMouseDown={(e) => !dismissDisabled && e.target === e.currentTarget && onClose()}>
       <div
         className="dialog"
         role="dialog"
@@ -47,7 +51,7 @@ export function Modal({ title, onClose, children, footer, width = 520, variant =
       >
         <div className="dialog-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <button className="icon-btn" onClick={onClose} aria-label="Close" disabled={dismissDisabled}>
             <CloseIcon size={14} />
           </button>
         </div>

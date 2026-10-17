@@ -8,8 +8,11 @@ import {
   SUPABASE_MATERIAL_CRUD_DENIED,
   SUPABASE_WRITE_LATER,
   closeAfterDirectWrite,
+  commitSupabaseIndexWrite,
   curveWriteEnabledFor,
+  indexWriteEnabledFor,
   materialCrudEnabledFor,
+  renamedSourceFilter,
   requestMaterialCrud,
   requestMaterialMutation,
   supabaseCommittedNotice,
@@ -53,6 +56,7 @@ type Dialog = 'help' | 'io' | 'mapInfo' | 'localEditing' | 'supabaseReadOnly' | 
 const supabaseDataSourceEnabled = import.meta.env
   ? import.meta.env.VITE_MATERIAL_DATA_SOURCE === 'supabase'
   : false;
+const supabaseIndexDirectHint = supabaseDataSourceEnabled ? '變更會直接寫入 Supabase。' : undefined;
 
 export function App() {
   const materialState = useMaterials();
@@ -74,6 +78,9 @@ export function App() {
     source: 'all',
     updated: 'all',
   });
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const [indexRemoteStale, setIndexRemoteStale] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const cols = useColumnPrefs();
   const [sort, setSort] = useState<SortState>({ key: 'name', dir: 'asc' });
@@ -90,6 +97,7 @@ export function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const materialCrudEnabled = materialCrudEnabledFor(materialState.dataSource, editable, supabaseAdmin);
   const curveWriteEnabled = curveWriteEnabledFor(materialState.dataSource, editable, supabaseAdmin);
+  const indexWriteEnabled = indexWriteEnabledFor(materialState.dataSource, editable, supabaseAdmin);
 
   // Drop selections that no longer exist (deleted / reset).
   useEffect(() => {
@@ -112,6 +120,11 @@ export function App() {
     setDeleting(null);
     setDeleteError(null);
   }, [materialState.dataSource, supabaseAdmin]);
+
+  useEffect(() => {
+    if (indexWriteEnabled || materialState.materialWriting) return;
+    setIndexManager(null);
+  }, [indexWriteEnabled, materialState.materialWriting]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -214,7 +227,7 @@ export function App() {
   const showLocalEditing = () => setDialog('localEditing');
   const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
   const crudReadOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_MATERIAL_CRUD_DENIED : LOCAL_EDITING_HINT;
-  // Index, CSV, JSON, and Save Database stay on the deferred Supabase gate.
+  // CSV, JSON, and Save Database stay on the deferred Supabase gate.
   const requestEdit = (action: () => void) => requestMaterialMutation(
     materialState.dataSource, editable, action, showLocalEditing, showSupabaseReadOnly,
   );
@@ -250,8 +263,11 @@ export function App() {
           filters={filters}
           onFilters={setFilters}
           selectedCount={selected.length}
-          onManage={(kind) => requestEdit(() => setIndexManager(kind))}
-          editable={editable}
+          onManage={(kind) => {
+            if (!indexWriteEnabled || indexRemoteStale) return;
+            setIndexManager(kind);
+          }}
+          indexManageEnabled={indexWriteEnabled && !indexRemoteStale}
         />
         <div className="workspace-content">
           {view === 'materials' && (
@@ -399,15 +415,33 @@ export function App() {
           onClose={() => { if (!deletePending) { setDeleteError(null); setDeleting(null); } }}
         />
       )}
-      {indexManager && editable && (
+      {indexManager && (indexWriteEnabled || materialState.materialWriting) && (
         <IndexManager
           kind={indexManager}
           materials={materials}
+          direct={materialState.dataSource === 'supabase'}
+          directHint={supabaseIndexDirectHint}
+          pending={materialState.materialWriting}
           onClose={() => setIndexManager(null)}
-          onSave={(id, name) => {
+          onRemoteCommitted={() => setIndexRemoteStale(true)}
+          onSave={async (id, name) => {
+            if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
+              const result = await commitSupabaseIndexWrite({
+                stale: indexRemoteStale,
+                kind: indexManager,
+                id,
+                name,
+                readActiveSource: () => filtersRef.current.source,
+                mutations: 'extendedMutations' in materialState ? materialState.extendedMutations : null,
+              });
+              if (result.notice) setNotice(result.notice);
+              if (result.sourceFilter !== null) setFilters({ ...filtersRef.current, source: result.sourceFilter });
+              return result.message;
+            }
             const error = editIndex(indexManager, id, name);
-            if (!error && indexManager === 'source' && id !== null && filters.source === id) {
-              setFilters({ ...filters, source: name.trim() });
+            if (!error && indexManager === 'source' && id !== null) {
+              const nextSource = renamedSourceFilter(filters.source, id, name);
+              if (nextSource !== null) setFilters({ ...filters, source: nextSource });
             }
             return error;
           }}

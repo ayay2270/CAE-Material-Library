@@ -13,7 +13,7 @@ import {
 import { helpModeCopy } from '../src/components/Dialogs';
 
 const readyLabel = '資料來源 · Supabase';
-const loginCopy = '登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料，並更新材料曲線。CSV 匯入與分類／來源管理目前仍為唯讀。';
+const loginCopy = '登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料，更新材料曲線，以及新增或重新命名分類與來源。CSV 匯入、JSON 寫入、分類刪除與來源刪除目前仍不可用。';
 const deferredCopy = '此功能在 Supabase 模式目前為唯讀，尚未開放寫入。';
 
 test('Supabase source label, login copy, and deferred copy are feature-scoped', async () => {
@@ -47,8 +47,8 @@ test('Supabase Admin material CRUD stays enabled while deferred writes stay clos
   assert.match(app, /<ImportExportDialog[\s\S]*editable=\{editable\}/);
   assert.match(app, /readOnlyHint=\{materialState\.dataSource === 'supabase' \? SUPABASE_WRITE_LATER : undefined\}/);
   assert.match(dialogs, /\{editable && <input ref=\{fileRef\}/);
-  assert.match(app, /\{indexManager && editable &&/);
-  assert.match(app, /<Sidebar[\s\S]*editable=\{editable\}/);
+  assert.match(app, /\{indexManager && \(indexWriteEnabled \|\| materialState\.materialWriting\) &&/);
+  assert.match(app, /<Sidebar[\s\S]*indexManageEnabled=\{indexWriteEnabled && !indexRemoteStale\}/);
   assert.equal(app.includes('Supabase（唯讀）'), false);
   assert.equal(app.includes('此功能目前為唯讀'), true);
 });
@@ -60,8 +60,9 @@ test('help copy follows the data source and leaves legacy local editing intact',
   assert.equal(supabase.includes('直接寫入 Supabase'), true);
   assert.equal(supabase.includes('不需要按 Save Database'), true);
   assert.equal(supabase.includes('更新材料曲線'), true);
-  assert.equal(supabase.includes('CSV／JSON 寫入，以及分類與來源管理目前仍為唯讀'), true);
-  assert.equal(supabase.includes('材料曲線、CSV／JSON 寫入'), false);
+  assert.equal(supabase.includes('新增或重新命名分類與來源'), true);
+  assert.equal(supabase.includes('CSV／JSON 寫入、分類刪除與來源刪除目前仍不可用'), true);
+  assert.equal(supabase.includes('分類與來源管理目前仍為唯讀'), false);
   assert.equal(legacy.includes('src/data/materials.json'), true);
   assert.equal(legacy.includes('按 Save Database 寫入檔案'), true);
   assert.equal(legacy.includes('連結本機資料庫'), true);

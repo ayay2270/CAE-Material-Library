@@ -81,10 +81,9 @@ test('Supabase curve save is direct and legacy curve save stays a local draft', 
   assert.match(app, /curvePending=\{materialState\.materialWriting\}/);
   assert.match(app, /<MaterialDrawer[\s\S]*editable=\{editable\}/);
   assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
-  assert.match(app, /<Sidebar[\s\S]*editable=\{editable\}/);
+  assert.match(app, /<Sidebar[\s\S]*indexManageEnabled=\{indexWriteEnabled && !indexRemoteStale\}/);
   assert.match(app, /<ImportExportDialog[\s\S]*editable=\{editable\}/);
-  assert.match(app, /\{indexManager && editable &&/);
-  assert.equal(app.includes('indexWriteEnabledFor'), false);
+  assert.match(app, /indexWriteEnabledFor\(materialState\.dataSource, editable, supabaseAdmin\)/);
   assert.equal(sidebar.includes('indexWriteEnabledFor'), false);
   assert.equal(section.includes('.sort('), false);
   assert.match(section, /保留原始順序/);

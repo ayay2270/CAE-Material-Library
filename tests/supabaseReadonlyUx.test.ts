@@ -67,7 +67,8 @@ test('Supabase editable remains false and UI files do not issue material queries
   assert.equal(app.includes("requestCrud(() => setEditing('new'))"), true);
   assert.equal(app.includes('requestCrud(() => setEditing(m))'), true);
   assert.equal(app.includes('requestCrud(() => { setDeleteError(null); setDeleting(m); })'), true);
-  assert.equal(app.includes('requestEdit(() => setIndexManager(kind))'), true);
+  assert.equal(app.includes('requestEdit(() => setIndexManager(kind))'), false);
+  assert.match(app, /onReadOnly=\{\(\) => requestEdit\(\(\) => \{\}\)\}/);
   assert.equal(app.includes("dialog === 'supabaseReadOnly'"), true);
   assert.equal(app.includes("dialog === 'supabaseCrudDenied'"), true);
   assert.equal(app.includes('SUPABASE_WRITE_LATER'), true);

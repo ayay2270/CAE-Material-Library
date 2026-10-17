@@ -216,10 +216,17 @@ test('extended RPC adapters stay out of the UI and the material CRUD module', as
     assert.equal(source.includes('addSupabaseCategory'), false);
     assert.equal(source.includes('renameSupabaseSource'), false);
   }
+  const editing = await readFile(new URL('../src/lib/localEditing.ts', import.meta.url), 'utf8');
   assert.match(app, /extendedMutations\.saveCurve/);
+  assert.match(app, /commitSupabaseIndexWrite\(/);
+  assert.match(editing, /mutations\.addCategory\(name\)/);
+  assert.match(editing, /mutations\.renameSource\(id, name\)/);
   assert.equal(app.includes('supabaseExtendedWrites'), false);
+  assert.equal(editing.includes('supabaseExtendedWrites'), false);
   assert.equal(app.includes('updateSupabaseMaterialCurve'), false);
   assert.equal(app.includes('addSupabaseCategory'), false);
+  assert.equal(editing.includes('addSupabaseCategory'), false);
   assert.equal(app.includes('renameSupabaseSource'), false);
-  assert.equal(app.includes('indexWriteEnabledFor'), false);
+  assert.equal(editing.includes('renameSupabaseSource'), false);
+  assert.equal(app.includes('indexWriteEnabledFor'), true);
 });

@@ -361,21 +361,21 @@ test('legacy free-text behavior is not routed through the Supabase source guard'
   assert.match(storage, /materialId => supabaseMaterialWriters\.deleteSupabaseMaterial\(materialId\)/);
 });
 
-test('Supabase admin wiring keeps index, CSV, and Save Database closed', async () => {
+test('Supabase admin wiring keeps CSV and Save Database closed', async () => {
   const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
   const drawer = await readFile(new URL('../src/components/MaterialDrawer.tsx', import.meta.url), 'utf8');
   const status = await readFile(new URL('../src/components/DatabaseStatus.tsx', import.meta.url), 'utf8');
   const sidebar = await readFile(new URL('../src/components/Sidebar.tsx', import.meta.url), 'utf8');
   assert.match(app, /materialCrudEnabledFor\(materialState\.dataSource, editable, supabaseAdmin\)/);
-  assert.match(app, /<Sidebar[\s\S]*?editable=\{editable\}/);
-  assert.match(app, /onManage=\{\(kind\) => requestEdit\(\(\) => setIndexManager\(kind\)\)\}/);
+  assert.match(app, /<Sidebar[\s\S]*?indexManageEnabled=\{indexWriteEnabled && !indexRemoteStale\}/);
+  assert.equal(app.includes('requestEdit(() => setIndexManager(kind))'), false);
   assert.match(app, /<ImportExportDialog[\s\S]*?editable=\{editable\}/);
   assert.match(app, /readOnlyHint=\{materialState\.dataSource === 'supabase' \? SUPABASE_WRITE_LATER : undefined\}/);
   assert.match(app, /<MaterialDrawer[\s\S]*?editable=\{editable\}[\s\S]*?materialCrudEnabled=\{materialCrudEnabled\}/);
   assert.match(drawer, /<StressStrainSection key=\{m\.id\} material=\{m\} units=\{units\} onSave=\{onSaveCurve\} editable=\{curveEditable\} pending=\{curvePending\} \/>/);
   assert.match(status, /\{editable && <button className="btn" disabled=\{!dirty \|\| saving\} onClick=\{\(\) => void saveDatabase\(\)\}>Save Database<\/button>\}/);
-  assert.match(sidebar, /\{editable && <button className="index-manage-trigger" aria-label="管理材料分類"/);
-  assert.match(sidebar, /\{editable && <button className="index-manage-trigger" aria-label="管理 SOURCE"/);
+  assert.match(sidebar, /\{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理材料分類"/);
+  assert.match(sidebar, /\{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理 SOURCE"/);
   assert.equal(app.includes('is_current_user_material_admin'), false);
   assert.equal(app.includes('startMaterialLibraryAuth'), false);
   const save = app.slice(app.indexOf('const save = async'), app.indexOf('const confirmDelete'));

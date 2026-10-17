@@ -11,7 +11,7 @@ interface Props {
   onFilters: (filters: Filters) => void;
   selectedCount: number;
   onManage: (kind: IndexKind) => void;
-  editable: boolean;
+  indexManageEnabled: boolean;
 }
 export function Sidebar({
   materials,
@@ -20,7 +20,7 @@ export function Sidebar({
   filters,
   onFilters,
   selectedCount, onManage,
-  editable,
+  indexManageEnabled,
 }: Props) {
   const indexes = useIndexes();
   const sources = indexes.sources;
@@ -73,7 +73,7 @@ export function Sidebar({
         ))}
       </nav>
       <nav className="sidebar-categories" aria-label="材料分類">
-        <div className="sidebar-index-heading"><h2>材料分類</h2>{editable && <button className="index-manage-trigger" aria-label="管理材料分類" onClick={() => onManage('category')}><EditIcon size={12}/> 編輯</button>}</div>
+        <div className="sidebar-index-heading"><h2>材料分類</h2>{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理材料分類" onClick={() => onManage('category')}><EditIcon size={12}/> 編輯</button>}</div>
         <button
           className={filters.category === 'all' ? 'active' : ''}
           aria-pressed={filters.category === 'all'}
@@ -100,7 +100,7 @@ export function Sidebar({
         ))}
       </nav>
       <nav className="sidebar-sources" aria-label="Source 來源索引">
-        <div className="sidebar-index-heading"><h2>SOURCE <span>/ 來源索引</span></h2>{editable && <button className="index-manage-trigger" aria-label="管理 SOURCE" onClick={() => onManage('source')}><EditIcon size={12}/> 編輯</button>}</div>
+        <div className="sidebar-index-heading"><h2>SOURCE <span>/ 來源索引</span></h2>{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理 SOURCE" onClick={() => onManage('source')}><EditIcon size={12}/> 編輯</button>}</div>
         <button
           className={filters.source === 'all' ? 'active' : ''}
           aria-pressed={filters.source === 'all'}
