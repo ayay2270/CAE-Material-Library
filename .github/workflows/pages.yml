@@ -1,7 +1,12 @@
-name: Deploy WIP Preview to GitHub Pages
+name: Deploy CAE Material Library to GitHub Pages
 
-# Temporary preview repository for wip/solver-bridge-calculated-h. Not production.
-# Builds with a relative base (build:preview) so it is served at this repository's own Pages path.
+# Deploys this repository to GitHub Pages.
+# npm run build:preview keeps a relative base, which matches
+# https://ayay2270.github.io/CAE-Material-Library/
+# Supabase mode is selected by VITE_MATERIAL_DATA_SOURCE below.
+# The project URL and publishable key come from repository Actions variables.
+# The publishable key is frontend configuration and is bundled into the client.
+# It is not a service-role secret. Do not put a service-role key in this workflow.
 on:
   push:
     branches: [main]
@@ -30,7 +35,31 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: npm ci
       - run: npm test
-      - run: npm run build:preview
+      - name: Verify required Supabase Actions variables
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=0
+          if [ -z "${VITE_SUPABASE_URL//[[:space:]]/}" ]; then
+            echo "Missing GitHub Actions variable: VITE_SUPABASE_URL"
+            missing=1
+          fi
+          if [ -z "${VITE_SUPABASE_PUBLISHABLE_KEY//[[:space:]]/}" ]; then
+            echo "Missing GitHub Actions variable: VITE_SUPABASE_PUBLISHABLE_KEY"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "Refusing to build or deploy without the required Actions variables."
+            exit 1
+          fi
+      - name: Build Supabase Pages site
+        env:
+          VITE_MATERIAL_DATA_SOURCE: supabase
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build:preview
       - run: npm run test:production
       - uses: actions/upload-pages-artifact@v3
         with:
