@@ -6,7 +6,21 @@ Step 4A prepares the identity model that later material write policies use. The 
 
 The browser client is created with the publishable frontend key. There is one Supabase client and one auth watcher. The user signs in with an existing Supabase Auth identity. Admin membership is a row in `private.material_library_admins`, keyed by that user's UUID. The browser does not read the registry. It calls `material_library.is_current_user_material_admin()`, which returns one boolean and no admin rows.
 
-The UI enables material Add, Edit, and Delete only when that check returns admin. Signed out, checking, non-admin, and error stay closed. A stale Admin badge does not authorize a write: Row Level Security on `material_library.materials` remains the boundary. Curve editing, CSV import, JSON recovery/import, and category or source index changes are not part of this write scope.
+The UI enables a write only for a confirmed Admin. Signed out, checking, non-admin, and error stay closed. A stale Admin badge does not authorize a write.
+
+Material Add, Edit, and Delete use the normal `material_library.materials` grants and Row Level Security from migration 005. The Admin predicate remains that boundary.
+
+Curve update, category add, category label rename, source add, and source rename use the narrow `SECURITY DEFINER` RPCs from migration 007:
+
+- `material_library.update_material_curve`
+- `material_library.add_material_category`
+- `material_library.rename_material_category_label`
+- `material_library.add_material_source`
+- `material_library.rename_material_source`
+
+Every one of those functions calls `private.is_material_admin()`. `EXECUTE` is granted to `authenticated` only. `anon` and `PUBLIC` do not receive it. Category and source tables do not receive generic browser `INSERT`, `UPDATE`, or `DELETE`.
+
+Still unavailable: category delete, source delete, CSV import/write, JSON import/recovery write, Save Database, and the legacy GitHub material write. The generic legacy `editable` flag stays false in Supabase mode.
 
 `supabase/migrations/004_material_library_admin_foundation.sql` is a review artifact. This step does not execute it.
 
@@ -90,4 +104,6 @@ The current material matrix is:
 | authenticated non-admin | yes | denied by RLS | denied by RLS | denied by RLS |
 | authenticated material admin | yes | yes | yes | yes |
 
-Those grants and policies are in `005_material_admin_write_policies.sql`, not in Step 4A. They cover `material_library.materials` only. Categories, sources, curves, CSV, and JSON import have no write grant here. The frontend Admin status chooses which buttons to show. It does not decide who is an admin.
+Those grants and policies are in `005_material_admin_write_policies.sql`, not in Step 4A. They cover `material_library.materials` only. Migration 005 does not grant category or source table writes, and it does not enable CSV or JSON import.
+
+Step 5 adds curve and index writes without changing that table-grant split. `007_material_admin_extended_write_rpcs.sql` defines the five functions listed in Current state. Each is `SECURITY DEFINER` with an empty `search_path`, checks `private.is_material_admin()`, and is executable by `authenticated` only. Category add, category label rename, source add, and source rename also take the same transaction advisory lock. There is no category or source delete RPC and no generic write policy on those tables. The frontend Admin status chooses which buttons to show. It does not decide who is an admin. This Step 5 branch is not merged or deployed.

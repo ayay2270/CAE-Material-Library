@@ -1,6 +1,6 @@
 # Supabase admin login
 
-Step 4D-1 adds Material Library sign-in and an admin-status display. Login authenticates the Supabase Auth user and then checks Material Library Admin status. It does not by itself grant Admin. A confirmed Admin can Add, Edit, and Delete materials. Those successful writes go directly to Supabase and do not ask for Save Database. A non-admin stays read-only for material CRUD. Curve editing, CSV import, JSON recovery/import, and category or source management stay read-only for every account.
+Step 4D-1 adds Material Library sign-in and an admin-status display. Login authenticates the Supabase Auth user and then checks Material Library Admin status. It does not by itself grant Admin. A confirmed Admin can add, edit, and delete materials, update a stress-strain curve, add or rename a category, and add or rename a source. Those successful writes go directly to Supabase and do not ask for Save Database. A non-admin stays closed for every one of those writes. Category delete, source delete, CSV import/write, JSON import/recovery write, and Save Database stay unavailable for every account.
 
 `supabase/migrations/006_material_admin_status_rpc.sql` is a review artifact. This step does not execute it.
 
@@ -42,7 +42,7 @@ Failure never promotes the user to admin.
 
 ## What login enables now
 
-Supabase mode still keeps the legacy `editable` flag false, so Save Database, curve editing, CSV import, JSON recovery, and category or source index editing stay inactive. Material Add, Edit, and Delete use a separate Admin capability. The client sends Auth requests, the boolean RPC, and, for a confirmed Admin, one material insert, update, or delete. It does not upsert, and it does not write categories or sources.
+Supabase mode still keeps the legacy `editable` flag false, so Save Database, CSV import, and JSON recovery stay inactive. Material Add, Edit, and Delete use `materialCrudEnabled`. Curve update uses `curveWriteEnabled`. Category and source add/rename use `indexWriteEnabled`. Each is true only for a confirmed Admin. The client sends Auth requests and the boolean RPC. A confirmed Admin may then call one material write or one of the five extended RPCs. It does not upsert, and it does not delete a category or source. Category and source rows are not written through generic table grants.
 
 Sign-in is email and password, with session restore and sign-out. There is no signup, password reset, magic link, or OAuth. This document stores no admin email, user id, password, or token.
 

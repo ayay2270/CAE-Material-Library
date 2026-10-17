@@ -137,7 +137,8 @@ export function useMaterials() {
     setDraft(latest.current);
   };
   useEffect(() => {
-    // Example mode and Supabase read-only mode skip the dev writer, remembered files, and legacy recovery.
+    // Example mode and Supabase mode skip the dev writer, remembered files, and legacy recovery.
+    // Catalog reads stay public. Confirmed Admin writes use their own capabilities. Generic editable stays false.
     if (exampleMode || supabaseActive) return;
     let cancelled = false;
     const version = fileGeneration.current;
@@ -397,7 +398,7 @@ export function useMaterials() {
       ));
     },
   } : null;
-  // Same lock and pending flag as material CRUD. Nothing in the UI calls these yet.
+  // Curve and index Admin writes share the same lock and pending flag as material CRUD.
   const extendedMutations = supabaseExtendedWriters ? {
     saveCurve(id: string, curve: StressStrainData) {
       return runSupabaseMutation(database => commitSupabaseCurve(

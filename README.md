@@ -2,11 +2,33 @@
 
 Repository: https://github.com/ayay2270/CAE-Material-Library
 
-Current development branch: `wip/supabase-admin-auth-step4`
+GitHub Pages: https://ayay2270.github.io/CAE-Material-Library/
 
-Prepared GitHub Pages URL: https://ayay2270.github.io/CAE-Material-Library/
+The deployed site uses Supabase as the material catalog. Everyone can browse it. This branch, `wip/supabase-admin-extended-writes-step5`, adds the confirmed-Admin curve and category/source writes below. It is not merged to `main` and it is not deployed.
 
-Supabase-backed Material Library is prepared on this branch. A confirmed Admin can Add, Edit, and Delete materials, and that path was live-verified. The GitHub Pages workflow is prepared to build Supabase mode. `main` has not been merged or deployed yet, so the production Supabase cutover is not complete.
+## Supabase capability
+
+Everyone can read the catalog.
+
+A confirmed Material Library Admin can:
+
+- Add, edit, and delete a material
+- Update a stress-strain curve
+- Add a category, or rename its display label
+- Add a source, or rename it
+
+Those writes go directly to Supabase. They do not create a local draft and they do not require Save Database.
+
+Still unavailable in Supabase mode:
+
+- Category delete
+- Source delete
+- CSV import/write
+- JSON import/recovery write
+- Save Database
+- Legacy GitHub material write
+
+The generic legacy `editable` flag stays false in Supabase mode. It still closes the deferred features above. Legacy mode remains available when Supabase mode is off.
 
 ## What is being previewed
 
@@ -29,4 +51,4 @@ CSV export still writes the **legacy stored H** value, while the UI displays the
 
 ## Notes
 
-Curve editing, CSV import, JSON recovery/import, and category or source management stay read-only in Supabase mode. Legacy mode remains available when Supabase mode is off.
+Supabase Admin writes listed above are direct. Legacy local editing still keeps a draft until Save Database.

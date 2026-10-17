@@ -9,7 +9,9 @@ import { Sidebar } from '../src/components/Sidebar';
 import { IndexContext, type MaterialIndexes } from '../src/lib/indexes';
 import {
   commitSupabaseIndexWrite,
+  curveWriteEnabledFor,
   indexWriteEnabledFor,
+  materialCrudEnabledFor,
   renamedSourceFilter,
   supabaseIndexNotice,
   type SupabaseIndexMutations,
@@ -54,6 +56,35 @@ test('index capability follows admin in Supabase and editable in legacy', () => 
   assert.equal(indexWriteEnabledFor('supabase', false, admin), true);
   assert.equal(indexWriteEnabledFor('legacy', false, true), false);
   assert.equal(indexWriteEnabledFor('legacy', true, false), true);
+});
+
+test('Supabase capability matrix enables Admin material, curve, and index writes only', async () => {
+  const blocked: MaterialAdminStatus[] = ['signed_out', 'checking', 'non_admin', 'error'];
+  for (const status of blocked) {
+    const admin = isSupabaseAdminCapability('supabase', status);
+    assert.equal(materialCrudEnabledFor('supabase', true, admin), false, status);
+    assert.equal(curveWriteEnabledFor('supabase', true, admin), false, status);
+    assert.equal(indexWriteEnabledFor('supabase', true, admin), false, status);
+  }
+  const admin = isSupabaseAdminCapability('supabase', 'admin');
+  assert.equal(materialCrudEnabledFor('supabase', false, admin), true);
+  assert.equal(curveWriteEnabledFor('supabase', false, admin), true);
+  assert.equal(indexWriteEnabledFor('supabase', false, admin), true);
+  assert.equal(materialCrudEnabledFor('legacy', true, false), true);
+  assert.equal(curveWriteEnabledFor('legacy', false, true), false);
+  assert.equal(indexWriteEnabledFor('legacy', true, false), true);
+  const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  const manager = await readFile(new URL('../src/components/IndexManager.tsx', import.meta.url), 'utf8');
+  const status = await readFile(new URL('../src/components/DatabaseStatus.tsx', import.meta.url), 'utf8');
+  const storage = await readFile(new URL('../src/lib/storage.ts', import.meta.url), 'utf8');
+  assert.equal(manager.includes('刪除'), false);
+  assert.equal(manager.includes('deleteCategory'), false);
+  assert.equal(manager.includes('deleteSource'), false);
+  assert.match(app, /<ImportExportDialog[\s\S]*editable=\{editable\}/);
+  assert.match(status, /\{editable && <button className="btn" disabled=\{!dirty \|\| saving\} onClick=\{\(\) => void saveDatabase\(\)\}>Save Database<\/button>\}/);
+  assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
+  assert.equal(storage.includes('editable = true'), false);
+  assert.equal(app.includes('setIndexRemoteStale(false)'), false);
 });
 
 test('Supabase generic editable stays false while index management is its own gate', async () => {

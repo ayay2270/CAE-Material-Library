@@ -3,8 +3,8 @@ import type { MasterDatabase } from './database-schema.mjs';
 import { validateDatabase } from './database-schema.mjs';
 import { deriveIndexes } from './indexes';
 
-export const SUPABASE_EXISTING_SOURCE_REQUIRED = '請選擇現有的 Source。Supabase 目前不能新增來源。';
-export const SUPABASE_EXISTING_CATEGORY_REQUIRED = '請選擇現有的 Category。Supabase 目前不能新增分類。';
+export const SUPABASE_EXISTING_SOURCE_REQUIRED = '請選擇現有的 Source。材料表單不能直接建立新來源。';
+export const SUPABASE_EXISTING_CATEGORY_REQUIRED = '請選擇現有的 Category。材料表單不能直接建立新分類。';
 export const SUPABASE_WRITE_IN_PROGRESS = '材料寫入進行中，請稍候。';
 export const SUPABASE_SOURCE_DISABLED = 'Supabase 資料來源未啟用。';
 
@@ -14,7 +14,7 @@ export function assertExistingSource(source: string, sources: readonly string[])
   if (!value || !sources.includes(value)) throw new Error(SUPABASE_EXISTING_SOURCE_REQUIRED);
 }
 
-/** Category rows stay read-only, so a material must use a category already in the index. */
+/** A material write must use a category already in the index. It does not create a category row. */
 export function assertExistingCategory(category: string, categories: readonly { id: string }[]): void {
   if (!category || !categories.some(row => row.id === category)) throw new Error(SUPABASE_EXISTING_CATEGORY_REQUIRED);
 }
