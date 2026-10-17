@@ -61,7 +61,7 @@ test('deferred Supabase writes stay closed and the adapter is not imported outsi
   const status = await readFile(new URL('../src/components/DatabaseStatus.tsx', import.meta.url), 'utf8');
   assert.match(app, /requestMaterialMutation\(\s*materialState\.dataSource, editable, action, showLocalEditing, showSupabaseReadOnly,/);
   assert.equal(app.includes('SUPABASE_WRITE_LATER'), true);
-  assert.equal(SUPABASE_WRITE_LATER, 'Supabase 目前為唯讀模式；寫入功能將於下一階段開放。');
+  assert.equal(SUPABASE_WRITE_LATER, '此功能在 Supabase 模式目前為唯讀，尚未開放寫入。');
   assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
   assert.match(storage, /const supabaseMaterialWriters = supabaseReadOnly/);
   assert.equal(storage.includes("from './supabaseMaterialWrites'"), true);

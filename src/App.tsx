@@ -399,9 +399,9 @@ export function App() {
           }}
         />
       )}
-      {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
+      {dialog === 'help' && <HelpDialog mode={materialState.exampleMode ? 'example' : materialState.dataSource} onClose={() => setDialog(null)} />}
       {dialog === 'localEditing' && <LocalEditingDialog onClose={() => setDialog(null)} supported={materialState.fileSupported} permissionNeeded={materialState.fileStatus === 'permission'} onConnect={() => { setDialog(null); void materialState.connectFile(); }} />}
-      {dialog === 'supabaseReadOnly' && <Modal title="Supabase（唯讀）" width={440} onClose={() => setDialog(null)}><p>{SUPABASE_WRITE_LATER}</p></Modal>}
+      {dialog === 'supabaseReadOnly' && <Modal title="此功能目前為唯讀" width={440} onClose={() => setDialog(null)}><p>{SUPABASE_WRITE_LATER}</p></Modal>}
       {dialog === 'supabaseCrudDenied' && <Modal title="沒有材料寫入權限" width={440} onClose={() => setDialog(null)}><p>{SUPABASE_MATERIAL_CRUD_DENIED}</p></Modal>}
       {dialog === 'mapInfo' && (
         <MapInfoDialog onClose={() => setDialog(null)} />
@@ -415,6 +415,7 @@ export function App() {
           onReadOnly={() => requestEdit(() => {})}
           onRecover={importDatabase}
           onLegacy={showLegacy}
+          showLegacyRecovery={materialState.dataSource !== 'supabase'}
           materials={materials}
           visibleRows={rows}
           onImport={importMany}

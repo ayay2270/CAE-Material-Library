@@ -320,5 +320,5 @@ test('only storage reaches the material write adapter, and only behind the Supab
   assert.equal(storage.includes("from './supabaseMaterialWrites'"), true);
   assert.match(storage, /const supabaseMaterialWriters = supabaseReadOnly\s*\?\s*\{ insertSupabaseMaterial, updateSupabaseMaterial, deleteSupabaseMaterial \}/);
   assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
-  assert.equal(editing.includes('Supabase 目前為唯讀模式；寫入功能將於下一階段開放。'), true);
+  assert.equal(editing.includes('此功能在 Supabase 模式目前為唯讀，尚未開放寫入。'), true);
 });

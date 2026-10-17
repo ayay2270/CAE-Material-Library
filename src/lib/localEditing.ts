@@ -5,9 +5,9 @@ export function requestLocalEditing(editable: boolean, action: () => void, showG
 }
 
 export const LOCAL_EDITING_HINT = '請先連結本機資料庫';
-export const SUPABASE_WRITE_LATER = 'Supabase 目前為唯讀模式；寫入功能將於下一階段開放。';
+export const SUPABASE_WRITE_LATER = '此功能在 Supabase 模式目前為唯讀，尚未開放寫入。';
 
-/** Supabase stays read-only for index, curve, CSV, and other deferred writes. */
+/** Deferred Supabase writes stay closed. Material add, edit, and delete use a separate gate. */
 export function requestMaterialMutation(
   dataSource: 'supabase' | 'legacy',
   editable: boolean,

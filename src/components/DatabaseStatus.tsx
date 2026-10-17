@@ -84,7 +84,7 @@ export function DatabaseStatus({ state, auth = null }: { state: State; auth?: Ma
 }
 
 function supabaseSourceLabel(state: State): string {
-  if (state.supabaseStatus === 'ready') return '資料來源 · Supabase（唯讀）';
+  if (state.supabaseStatus === 'ready') return '資料來源 · Supabase';
   if (state.supabaseStatus === 'error') return '資料來源 · Supabase（讀取失敗）';
   return '資料來源 · Supabase（讀取中）';
 }

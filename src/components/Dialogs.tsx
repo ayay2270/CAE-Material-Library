@@ -53,6 +53,7 @@ export function ImportExportDialog({
   onReadOnly,
   dirty = false,
   readOnlyHint,
+  showLegacyRecovery = true,
 }: {
   materials: Material[];
   visibleRows: Material[];
@@ -66,6 +67,8 @@ export function ImportExportDialog({
   onReadOnly: () => void;
   dirty?: boolean;
   readOnlyHint?: string;
+  /** Legacy and example keep the local-browser recovery control. Supabase hides it. */
+  showLegacyRecovery?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const recoveryRef = useRef<HTMLInputElement>(null);
@@ -167,22 +170,45 @@ export function ImportExportDialog({
           <button className="btn" onClick={() => setConfirmReset(true)}>取消未儲存變更…</button>
         )}
       </section>}
-      <section className="io-block"><button className="btn" onClick={onLegacy}>檢查舊瀏覽器資料</button></section>
+      {showLegacyRecovery && <section className="io-block"><button className="btn" onClick={onLegacy}>檢查舊瀏覽器資料</button></section>}
     </Modal>
   );
 }
 
-export function HelpDialog({ onClose }: { onClose: () => void }) {
+export type HelpMode = 'supabase' | 'legacy' | 'example';
+
+/** Mode-specific help sentences. Legacy keeps the local materials.json workflow. */
+export function helpModeCopy(mode: HelpMode): { view: string; storage: string } {
+  if (mode === 'supabase') {
+    return {
+      view: '點選任一列開啟詳細資料（基本性質、材料曲線、來源與備註、歷史記錄）。已確認的 Admin 可直接新增、編輯與刪除材料。',
+      storage: '目前材料資料來自 Supabase，所有人都可以瀏覽。已確認的 Admin 新增、編輯與刪除材料時會直接寫入 Supabase，不需要按 Save Database。材料曲線、CSV／JSON 寫入，以及分類與來源管理目前仍為唯讀。',
+    };
+  }
+  if (mode === 'example') {
+    return {
+      view: '點選任一列開啟詳細資料（基本性質、材料曲線、來源與備註、歷史記錄）。新增與編輯只保留在此分頁。',
+      storage: '這是獨立範例。變更只保存在此分頁，重新整理會保留，不會寫入 Supabase，也不會更改原始 materials.json。',
+    };
+  }
+  return {
+    view: '點選任一列開啟詳細資料（基本性質、材料曲線、來源與備註、歷史記錄）；連結本機資料庫後即可編輯與刪除。',
+    storage: 'Git 追蹤的 src/data/materials.json 是主資料庫。使用 Chrome 或 Edge「連結本機資料庫」並授權後，編輯先保留為記憶體草稿，按 Save Database 寫入檔案，再到 GitHub Desktop Commit + Push。網站只讀取 GitHub 資料確認同步，不會推送。IndexedDB 只記住檔案控制代碼，localStorage 只保存欄位偏好與舊資料通知已讀狀態。',
+  };
+}
+
+export function HelpDialog({ onClose, mode = 'legacy' }: { onClose: () => void; mode?: HelpMode }) {
+  const copy = helpModeCopy(mode);
   return (
     <Modal title="使用說明" width={520} onClose={onClose}>
       <ul className="help-list">
         <li><b>尋找材料</b>：用上方搜尋列（名稱、關鍵字、來源），或以「材料類別 / 來源 / 更新時間」篩選；點欄位標題可排序。</li>
-        <li><b>查看資料</b>：點選任一列開啟詳細資料（基本性質、材料曲線、來源與備註、歷史記錄）；連結本機資料庫後即可編輯與刪除。</li>
+        <li><b>查看資料</b>：{copy.view}</li>
         <li><b>欄位設定</b>：拖曳（或用 ▲▼ 按鈕）調整欄位順序，取消勾選即可隱藏；Material Name 固定顯示。設定會儲存在此瀏覽器。</li>
         <li><b>缺少的數值</b>顯示為「—」，不會當作 0。</li>
         <li><b>比較材料</b>：勾選 2 個以上材料，按「比較材料」，數量不限。</li>
         <li><b>材料地圖</b>：Density × Young's Modulus 的輔助圖，點選 ⓘ 了解如何閱讀。</li>
-        <li><b>資料儲存</b>：Git 追蹤的 src/data/materials.json 是主資料庫。使用 Chrome 或 Edge「連結本機資料庫」並授權後，編輯先保留為記憶體草稿，按 Save Database 寫入檔案，再到 GitHub Desktop Commit + Push。網站只讀取 GitHub 資料確認同步，不會推送。IndexedDB 只記住檔案控制代碼，localStorage 只保存欄位偏好與舊資料通知已讀狀態。</li>
+        <li><b>資料儲存</b>：{copy.storage}</li>
         <li><b>快捷鍵</b>：按 <kbd>/</kbd> 跳到搜尋列。</li>
       </ul>
       <p className="muted small">

@@ -22,14 +22,16 @@ test('production has browser-selected file access but no server filesystem endpo
   assert.ok(js.includes(JSON.stringify(JSON.parse(before).materials[0].id)), 'committed material ID is included in the deployed viewer');
   assert.ok(js.includes('showOpenFilePicker') && js.includes('createWritable'), 'production includes explicit selected-file integration');
   assert.ok(js.includes('連結本機資料庫') && js.includes('檢查 GitHub 同步'));
-  // material_library plus the read-only label means the Supabase reader is in this bundle.
+  // material_library plus the source label means the Supabase reader is in this bundle.
+  // The old whole-database read-only label must not be the marker: Admin material CRUD is live.
   // A quoted "sb_secret_" is the SDK prefix check, not a secret value. A key body after that prefix is.
-  const supabaseBundle = js.includes('material_library') && js.includes('資料來源 · Supabase（唯讀）');
+  const supabaseBundle = js.includes('material_library') && js.includes('資料來源 · Supabase') && !js.includes('資料來源 · Supabase（唯讀）');
   t.diagnostic(`production mode: ${supabaseBundle ? 'supabase' : 'legacy'}`);
   assert.equal(/github_pat_|ghp_|sb_secret_(?!["'])|service_role|SUPABASE_SERVICE_ROLE_KEY|VITE_SUPABASE_SERVICE_ROLE_KEY/.test(js), false, 'no private credentials');
   if (supabaseBundle) {
     assert.ok(js.includes('material_library'), 'supabase production includes the material_library reader');
-    assert.ok(js.includes('資料來源 · Supabase（唯讀）'), 'supabase production includes the read-only status');
+    assert.ok(js.includes('資料來源 · Supabase'), 'supabase production includes the source status');
+    assert.equal(js.includes('資料來源 · Supabase（唯讀）'), false, 'supabase production no longer calls the whole source read-only');
   } else {
     assert.equal(js.includes('material_library'), false, 'legacy production must omit the Supabase reader');
     assert.equal(/Authorization|Bearer |github_pat_|ghp_/.test(js), false, 'no GitHub credentials');
