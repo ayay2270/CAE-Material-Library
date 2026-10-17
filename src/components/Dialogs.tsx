@@ -6,7 +6,7 @@ import { DownloadIcon, UploadIcon } from './icons';
 import { downloadJson } from '../lib/legacy';
 import type { MasterDatabase } from '../lib/database-schema.mjs';
 import { parseFileDatabase } from '../lib/browserDatabase';
-import { requestLocalEditing } from '../lib/localEditing';
+import { LOCAL_EDITING_HINT, requestLocalEditing } from '../lib/localEditing';
 
 export function ConfirmDelete({ material, onConfirm, onClose }: { material: Material; onConfirm: () => void; onClose: () => void }) {
   return (
@@ -41,6 +41,7 @@ export function ImportExportDialog({
   onLegacy,
   onReadOnly,
   dirty = false,
+  readOnlyHint,
 }: {
   materials: Material[];
   visibleRows: Material[];
@@ -53,6 +54,7 @@ export function ImportExportDialog({
   onLegacy: () => void;
   onReadOnly: () => void;
   dirty?: boolean;
+  readOnlyHint?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const recoveryRef = useRef<HTMLInputElement>(null);
@@ -100,7 +102,7 @@ export function ImportExportDialog({
           請使用本工具匯出的檔案格式（欄位：Name、Category、各性質欄位、Source、Notes）。名稱相同的列會更新該材料，其餘新增；空白欄位維持「—」。
         </p>
         {editable && <input ref={fileRef} type="file" accept=".csv,text/csv" hidden data-testid="csv-input" onChange={(e) => onFile(e.target.files?.[0])} />}
-        <button className="btn" title={editable ? '匯入 CSV' : '請先連結本機資料庫'} onClick={() => requestLocalEditing(editable, () => fileRef.current?.click(), onReadOnly)}>
+        <button className="btn" title={editable ? '匯入 CSV' : (readOnlyHint ?? LOCAL_EDITING_HINT)} onClick={() => requestLocalEditing(editable, () => fileRef.current?.click(), onReadOnly)}>
           <UploadIcon /> 選擇 CSV 檔案…
         </button>
         {editable && <>
@@ -131,7 +133,7 @@ export function ImportExportDialog({
         }}>確認回復草稿</button> <button className="btn" onClick={() => setPendingRecovery(null)}>取消</button></p>}
         </>}
       </section>
-      {!editable && <p className="muted">請先連結本機 src/data/materials.json，即可匯入資料。未連結時可瀏覽及匯出資料。</p>}
+      {!editable && <p className="muted">{readOnlyHint ?? '請先連結本機 src/data/materials.json，即可匯入資料。未連結時可瀏覽及匯出資料。'}</p>}
       {(editable || dirty) && <section className="io-block">
         <h3>未儲存草稿</h3>
         <p className="muted">取消未儲存變更，回到本次載入或最後成功 Save Database 的資料（包含分類／SOURCE）。</p>

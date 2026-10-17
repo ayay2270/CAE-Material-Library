@@ -2,15 +2,18 @@ import { HelpIcon, PlusIcon } from './icons';
 import logo from '../assets/lenovo-logo.png';
 import landscapeBackground from '../assets/header-mountain-lake.jpg';
 import type { ReactNode } from 'react';
+import { LOCAL_EDITING_HINT } from '../lib/localEditing';
 export function Header({
   onHelp,
   onAdd,
   editable,
+  readOnlyTitle = LOCAL_EDITING_HINT,
   databaseStatus,
 }: {
   onHelp: () => void;
   onAdd: () => void;
   editable: boolean;
+  readOnlyTitle?: string;
   databaseStatus?: ReactNode;
 }) {
   return (
@@ -30,7 +33,7 @@ export function Header({
         <button className="header-help" onClick={onHelp}>
           <HelpIcon size={17} /> 使用說明
         </button>
-        <button className="btn primary" onClick={onAdd} title={editable ? '新增材料' : '請先連結本機資料庫'}>
+        <button className="btn primary" onClick={onAdd} title={editable ? '新增材料' : readOnlyTitle}>
           <PlusIcon size={15} /> 新增材料
         </button>
       </div>

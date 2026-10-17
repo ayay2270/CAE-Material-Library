@@ -3,8 +3,9 @@ import type { Material, MaterialInput, View } from './types';
 import { useMaterials } from './lib/storage';
 import { EXAMPLE_ID } from './lib/orthotropicExample';
 import { DatabaseStatus } from './components/DatabaseStatus';
-import { requestLocalEditing } from './lib/localEditing';
+import { LOCAL_EDITING_HINT, SUPABASE_WRITE_LATER, requestMaterialMutation } from './lib/localEditing';
 import { LocalEditingDialog } from './components/LocalEditingDialog';
+import { Modal } from './components/Modal';
 import { LegacyRecovery } from './components/LegacyRecovery';
 import { useColumnPrefs } from './lib/columns';
 import { DEFAULT_UNITS } from './lib/format';
@@ -34,7 +35,7 @@ import {
   MapInfoDialog,
 } from './components/Dialogs';
 
-type Dialog = 'help' | 'io' | 'mapInfo' | 'localEditing' | null;
+type Dialog = 'help' | 'io' | 'mapInfo' | 'localEditing' | 'supabaseReadOnly' | null;
 
 export function App() {
   const materialState = useMaterials();
@@ -147,13 +148,18 @@ export function App() {
 
   const navigate = (v: View) => setView(v);
   const showLocalEditing = () => setDialog('localEditing');
-  const requestEdit = (action: () => void) => requestLocalEditing(editable, action, showLocalEditing);
+  const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
+  const readOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_WRITE_LATER : LOCAL_EDITING_HINT;
+  const requestEdit = (action: () => void) => requestMaterialMutation(
+    materialState.dataSource, editable, action, showLocalEditing, showSupabaseReadOnly,
+  );
 
   return (
     <IndexContext.Provider value={indexes}>
     <div className="app">
       <Header
         editable={editable}
+        readOnlyTitle={readOnlyTitle}
         databaseStatus={<DatabaseStatus state={materialState} />}
         onHelp={() => setDialog('help')}
         onAdd={() => requestEdit(() => setEditing('new'))}
@@ -175,7 +181,7 @@ export function App() {
           filters={filters}
           onFilters={setFilters}
           selectedCount={selected.length}
-          onManage={setIndexManager}
+          onManage={(kind) => requestEdit(() => setIndexManager(kind))}
           editable={editable}
         />
         <div className="workspace-content">
@@ -218,6 +224,7 @@ export function App() {
               {libraryMode === 'table' ? (
                 <MaterialTable
                   editable={editable}
+                  readOnlyTitle={readOnlyTitle}
                   rows={rows}
                   total={materials.length}
                   columns={cols.visible}
@@ -276,6 +283,7 @@ export function App() {
       {detail && !editing && !deleting && (
         <MaterialDrawer
           editable={editable}
+          readOnlyTitle={readOnlyTitle}
           material={detail}
           units={units}
           onClose={() => setDetailId(null)}
@@ -320,6 +328,7 @@ export function App() {
       )}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
       {dialog === 'localEditing' && <LocalEditingDialog onClose={() => setDialog(null)} supported={materialState.fileSupported} permissionNeeded={materialState.fileStatus === 'permission'} onConnect={() => { setDialog(null); void materialState.connectFile(); }} />}
+      {dialog === 'supabaseReadOnly' && <Modal title="Supabase（唯讀）" width={440} onClose={() => setDialog(null)}><p>{SUPABASE_WRITE_LATER}</p></Modal>}
       {dialog === 'mapInfo' && (
         <MapInfoDialog onClose={() => setDialog(null)} />
       )}
@@ -328,7 +337,8 @@ export function App() {
           editable={editable}
           dirty={materialState.dirty}
           database={database}
-          onReadOnly={showLocalEditing}
+          readOnlyHint={materialState.dataSource === 'supabase' ? SUPABASE_WRITE_LATER : undefined}
+          onReadOnly={() => requestEdit(() => {})}
           onRecover={importDatabase}
           onLegacy={showLegacy}
           materials={materials}

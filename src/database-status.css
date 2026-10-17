@@ -1,4 +1,6 @@
 .database-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #374151; }
+.database-auth { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.database-auth-alert { color: #991b1b; max-width: 18em; line-height: 1.35; white-space: normal; }
 /* Let only the compact status popover extend below the existing header. */
 .app-header { overflow: visible; z-index: 20; }
 .header-landscape { overflow: hidden; }

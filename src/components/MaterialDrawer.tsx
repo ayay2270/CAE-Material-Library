@@ -10,6 +10,7 @@ import { Modal } from './Modal';
 import { StressStrainSection } from './StressStrainSection';
 import { EtanPanel } from './EtanPanel';
 import { EditIcon, TrashIcon } from './icons';
+import { LOCAL_EDITING_HINT } from '../lib/localEditing';
 
 interface Props {
   editable: boolean;
@@ -19,6 +20,7 @@ interface Props {
   onEdit: () => void;
   onDelete: () => void;
   onSaveCurve: (data: StressStrainData) => string | null;
+  readOnlyTitle?: string;
 }
 
 type Tab = 'props' | 'curve' | 'source' | 'history';
@@ -31,7 +33,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 const ACTION_LABEL = { created: '建立', edited: '編輯', imported: '匯入' } as const;
 
-export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve, editable }: Props) {
+export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve, editable, readOnlyTitle = LOCAL_EDITING_HINT }: Props) {
   const indexes = useIndexes();
   const [tab, setTab] = useState<Tab>('props');
 
@@ -47,12 +49,12 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
       }
       footer={
         <>
-          <button className="btn danger-outline" onClick={onDelete} title={editable ? '刪除' : '請先連結本機資料庫'}>
+          <button className="btn danger-outline" onClick={onDelete} title={editable ? '刪除' : readOnlyTitle}>
             <TrashIcon /> 刪除
           </button>
           <span className="toolbar-spacer" />
           <button className="btn" onClick={onClose}>關閉</button>
-          <button className="btn primary" onClick={onEdit} title={editable ? '編輯' : '請先連結本機資料庫'}>
+          <button className="btn primary" onClick={onEdit} title={editable ? '編輯' : readOnlyTitle}>
             <EditIcon /> 編輯
           </button>
         </>

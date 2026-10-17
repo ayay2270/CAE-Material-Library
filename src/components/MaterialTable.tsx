@@ -9,6 +9,7 @@ import { COLUMN_BY_ID } from '../lib/columns';
 import type { ColId } from '../lib/columns';
 import type { SortKey, SortState } from '../lib/sort';
 import { EditIcon, SortArrows, TrashIcon } from './icons';
+import { LOCAL_EDITING_HINT } from '../lib/localEditing';
 
 interface Props {
   editable: boolean;
@@ -23,6 +24,7 @@ interface Props {
   onOpen: (m: Material) => void;
   onEdit: (m: Material) => void;
   onDelete: (m: Material) => void;
+  readOnlyTitle?: string;
   units: UnitPrefs;
   activeId: string | null;
 }
@@ -127,10 +129,10 @@ export function MaterialTable(p: Props) {
                   <td className="col-idx sticky s1">{i + 1}</td>
                   {p.columns.map((id) => cell(id, m))}
                   <td className="col-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title={p.editable ? '編輯' : '請先連結本機資料庫'}>
+                    <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title={p.editable ? '編輯' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
                       <EditIcon />
                     </button>
-                    <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title={p.editable ? '刪除' : '請先連結本機資料庫'}>
+                    <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title={p.editable ? '刪除' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
                       <TrashIcon />
                     </button>
                   </td>
