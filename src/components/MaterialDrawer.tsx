@@ -14,6 +14,8 @@ import { LOCAL_EDITING_HINT } from '../lib/localEditing';
 
 interface Props {
   editable: boolean;
+  /** Edit and delete. Defaults to `editable` so legacy callers stay unchanged. */
+  materialCrudEnabled?: boolean;
   material: Material;
   units: UnitPrefs;
   onClose: () => void;
@@ -33,7 +35,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 const ACTION_LABEL = { created: '建立', edited: '編輯', imported: '匯入' } as const;
 
-export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve, editable, readOnlyTitle = LOCAL_EDITING_HINT }: Props) {
+export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve, editable, materialCrudEnabled = editable, readOnlyTitle = LOCAL_EDITING_HINT }: Props) {
   const indexes = useIndexes();
   const [tab, setTab] = useState<Tab>('props');
 
@@ -49,12 +51,12 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
       }
       footer={
         <>
-          <button className="btn danger-outline" onClick={onDelete} title={editable ? '刪除' : readOnlyTitle}>
+          <button className="btn danger-outline" onClick={onDelete} title={materialCrudEnabled ? '刪除' : readOnlyTitle}>
             <TrashIcon /> 刪除
           </button>
           <span className="toolbar-spacer" />
           <button className="btn" onClick={onClose}>關閉</button>
-          <button className="btn primary" onClick={onEdit} title={editable ? '編輯' : readOnlyTitle}>
+          <button className="btn primary" onClick={onEdit} title={materialCrudEnabled ? '編輯' : readOnlyTitle}>
             <EditIcon /> 編輯
           </button>
         </>

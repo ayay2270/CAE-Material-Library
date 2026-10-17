@@ -44,7 +44,7 @@ test('legacy readonly still opens local editing and a ready editor still runs', 
   assert.equal(ran, 2);
 });
 
-test('Supabase editable remains false and no material write was added', async () => {
+test('Supabase editable remains false and UI files do not issue material queries', async () => {
   const storage = await readFile(new URL('../src/lib/storage.ts', import.meta.url), 'utf8');
   assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
   assert.equal(storage.includes('editable = true'), false);
@@ -64,10 +64,12 @@ test('Supabase editable remains false and no material write was added', async ()
   }
   const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
   assert.equal(app.includes('requestMaterialMutation'), true);
-  assert.equal(app.includes("requestEdit(() => setEditing('new'))"), true);
-  assert.equal(app.includes('requestEdit(() => setEditing(m))'), true);
-  assert.equal(app.includes('requestEdit(() => setDeleting(m))'), true);
+  assert.equal(app.includes("requestCrud(() => setEditing('new'))"), true);
+  assert.equal(app.includes('requestCrud(() => setEditing(m))'), true);
+  assert.equal(app.includes('requestCrud(() => { setDeleteError(null); setDeleting(m); })'), true);
+  assert.equal(app.includes('requestEdit(() => setIndexManager(kind))'), true);
   assert.equal(app.includes("dialog === 'supabaseReadOnly'"), true);
+  assert.equal(app.includes("dialog === 'supabaseCrudDenied'"), true);
   assert.equal(app.includes('SUPABASE_WRITE_LATER'), true);
   assert.equal(app.includes(SUPABASE_WRITE_LATER), false);
 });

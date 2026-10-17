@@ -12,6 +12,16 @@ import { forgetHandle, getRememberedHandle, rememberHandle } from './fileHandleS
 import { useGitHubSync } from './useGitHubSync';
 import { isOrthotropicExample, readOrthotropicExample, saveOrthotropicExample } from './orthotropicExample';
 import { readSupabaseDatabase } from './supabaseDatabase';
+import { deleteSupabaseMaterial, insertSupabaseMaterial, updateSupabaseMaterial } from './supabaseMaterialWrites';
+import {
+  SUPABASE_SOURCE_DISABLED,
+  commitSupabaseDelete,
+  commitSupabaseInsert,
+  commitSupabaseUpdate,
+  createWriteLock,
+  runSupabaseMaterialMutation,
+} from './supabaseMaterialCommit';
+import type { MasterDatabase } from './database-schema.mjs';
 
 // The comparison stays in the true branch so a non-supabase literal makes both sides false
 // and the reader import can be dropped. A missing env object never evaluates the member.
@@ -19,8 +29,11 @@ const supabaseReadOnly = import.meta.env
   ? import.meta.env.VITE_MATERIAL_DATA_SOURCE === 'supabase'
   : false;
 const readSupabaseWhenEnabled = supabaseReadOnly ? readSupabaseDatabase : null;
+const supabaseMaterialWriters = supabaseReadOnly
+  ? { insertSupabaseMaterial, updateSupabaseMaterial, deleteSupabaseMaterial }
+  : null;
 
-function newId(): string {
+export function newMaterialId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID() : `m-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -252,7 +265,7 @@ export function useMaterials() {
   const add = (input: MaterialInput): Material => {
     assertEditor();
     const now = new Date().toISOString();
-    const m: Material = { ...input, id: newId(), updatedAt: now, history: [{ at: now, action: 'created', summary: '建立記錄' }] };
+    const m: Material = { ...input, id: newMaterialId(), updatedAt: now, history: [{ at: now, action: 'created', summary: '建立記錄' }] };
     setMaterials(list => [...list, m]);
     return m;
   };
@@ -293,7 +306,7 @@ export function useMaterials() {
         next[idx] = { ...m, ...row, updatedAt: now, history: [{ at: now, action: 'imported', summary: `CSV 匯入 — ${diff}` }, ...m.history] };
         updated++;
       } else {
-        next.push({ ...row, id: newId(), updatedAt: now, history: [{ at: now, action: 'imported', summary: '由 CSV 匯入建立' }] });
+        next.push({ ...row, id: newMaterialId(), updatedAt: now, history: [{ at: now, action: 'imported', summary: '由 CSV 匯入建立' }] });
         added++;
       }
     }
@@ -314,11 +327,60 @@ export function useMaterials() {
     latest.current = { ...latest.current, materials, indexes: result.next }; setDraft(latest.current);
     return null;
   };
-  return { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
+  const writeLock = useRef(createWriteLock());
+  const [materialWriting, setMaterialWriting] = useState(false);
+  const runSupabaseMutation = (change: (database: MasterDatabase) => Promise<MasterDatabase>) => {
+    if (!supabaseActive || !supabaseMaterialWriters) return Promise.reject(new Error(SUPABASE_SOURCE_DISABLED));
+    return writeLock.current.exclusive(async () => {
+      setMaterialWriting(true);
+      try {
+        // Draft and saved both become the returned database, so a direct write is not a local draft.
+        const committed = await runSupabaseMaterialMutation(latest.current, change);
+        latest.current = committed;
+        setDraft(committed);
+        setSaved(committed);
+      } finally {
+        setMaterialWriting(false);
+      }
+    });
+  };
+  // The writer object is null in a legacy build, so these calls are removed with the adapter.
+  const materialMutations = supabaseMaterialWriters ? {
+    add(input: MaterialInput) {
+      return runSupabaseMutation(database => commitSupabaseInsert(
+        database,
+        input,
+        material => supabaseMaterialWriters.insertSupabaseMaterial(material),
+        new Date().toISOString(),
+        newMaterialId(),
+      ));
+    },
+    updateMaterial(id: string, input: MaterialInput) {
+      return runSupabaseMutation(database => commitSupabaseUpdate(
+        database,
+        id,
+        input,
+        material => supabaseMaterialWriters.updateSupabaseMaterial(material),
+        new Date().toISOString(),
+        describeChanges,
+      ));
+    },
+    remove(id: string) {
+      return runSupabaseMutation(database => commitSupabaseDelete(
+        database,
+        id,
+        materialId => supabaseMaterialWriters.deleteSupabaseMaterial(materialId),
+      ));
+    },
+  } : null;
+  const state = { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
+    materialWriting,
     editable, dirty, ready, saving, saveError, saveDatabase, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database: draft,
     fileSupported, fileStatus, fileError, fileName: fileSession.current?.handle.name ?? pendingHandle.current?.name ?? null, connectFile, reloadFile, disconnectFile,
     lastReadAt, lastSavedAt, backupText, github, exampleMode, developerMode: !supabaseActive && !exampleMode && LOCAL_EDITOR && ready && !fileSession.current,
     dataSource: supabaseActive ? 'supabase' as const : 'legacy' as const,
     supabaseStatus: supabaseActive ? supabaseStatus : 'idle' as const,
     supabaseError: supabaseActive ? supabaseError : null };
+  // The mutation object is absent from a legacy build, so its name is not shipped there.
+  return supabaseReadOnly ? { ...state, materialMutations } : state;
 }

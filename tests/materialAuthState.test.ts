@@ -50,7 +50,7 @@ test('Supabase admin capability follows the resolved snapshot and data source', 
   }
 });
 
-test('admin capability does not open Supabase writes or the write adapter', async () => {
+test('deferred Supabase writes stay closed and the adapter is not imported outside storage', async () => {
   assert.equal(isSupabaseAdminCapability('supabase', 'admin'), true);
   const calls = { action: 0, local: 0, supabase: 0 };
   requestMaterialMutation('supabase', false, () => { calls.action += 1; }, () => { calls.local += 1; }, () => { calls.supabase += 1; });
@@ -63,12 +63,17 @@ test('admin capability does not open Supabase writes or the write adapter', asyn
   assert.equal(app.includes('SUPABASE_WRITE_LATER'), true);
   assert.equal(SUPABASE_WRITE_LATER, 'Supabase 目前為唯讀模式；寫入功能將於下一階段開放。');
   assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
-  for (const source of [app, storage, hook, status]) {
+  assert.match(storage, /const supabaseMaterialWriters = supabaseReadOnly/);
+  assert.equal(storage.includes("from './supabaseMaterialWrites'"), true);
+  for (const source of [app, hook, status]) {
     assert.equal(source.includes('supabaseMaterialWrites'), false);
     assert.equal(source.includes('insertSupabaseMaterial'), false);
     assert.equal(source.includes('updateSupabaseMaterial'), false);
     assert.equal(source.includes('deleteSupabaseMaterial'), false);
+    assert.equal(source.includes('is_current_user_material_admin'), false);
   }
+  assert.equal(app.includes('startMaterialLibraryAuth'), false);
+  assert.equal(status.includes('startMaterialLibraryAuth'), false);
 });
 
 test('legacy local editing and example mode stay on their existing paths', async () => {

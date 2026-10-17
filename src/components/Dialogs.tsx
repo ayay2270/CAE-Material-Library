@@ -8,7 +8,15 @@ import type { MasterDatabase } from '../lib/database-schema.mjs';
 import { parseFileDatabase } from '../lib/browserDatabase';
 import { LOCAL_EDITING_HINT, requestLocalEditing } from '../lib/localEditing';
 
-export function ConfirmDelete({ material, onConfirm, onClose }: { material: Material; onConfirm: () => void; onClose: () => void }) {
+export function ConfirmDelete({ material, onConfirm, onClose, direct = false, pending = false, error = null }: {
+  material: Material;
+  onConfirm: () => void;
+  onClose: () => void;
+  /** Supabase delete writes immediately. Legacy keeps the draft wording. */
+  direct?: boolean;
+  pending?: boolean;
+  error?: string | null;
+}) {
   return (
     <Modal
       title="刪除材料？"
@@ -17,14 +25,17 @@ export function ConfirmDelete({ material, onConfirm, onClose }: { material: Mate
       footer={
         <>
           <span className="toolbar-spacer" />
-          <button className="btn" onClick={onClose}>取消</button>
-          <button className="btn danger" onClick={onConfirm}>刪除</button>
+          <button className="btn" onClick={onClose} disabled={pending}>取消</button>
+          <button className="btn danger" onClick={onConfirm} disabled={pending}>{pending ? '刪除中…' : '刪除'}</button>
         </>
       }
     >
       <p>
-        <b>{material.name}</b> 及其歷史記錄將從目前草稿移除。按 Save Database 才會寫入 Git 主資料庫；寫入前可取消未儲存變更。
+        {direct
+          ? <><b>{material.name}</b> 會直接從 Supabase 刪除，確認成功後才會生效。失敗時這筆材料會保留。</>
+          : <><b>{material.name}</b> 及其歷史記錄將從目前草稿移除。按 Save Database 才會寫入 Git 主資料庫；寫入前可取消未儲存變更。</>}
       </p>
+      {error && <p className="notice err" role="alert">{error}</p>}
     </Modal>
   );
 }

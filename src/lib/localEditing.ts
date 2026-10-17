@@ -7,7 +7,7 @@ export function requestLocalEditing(editable: boolean, action: () => void, showG
 export const LOCAL_EDITING_HINT = '請先連結本機資料庫';
 export const SUPABASE_WRITE_LATER = 'Supabase 目前為唯讀模式；寫入功能將於下一階段開放。';
 
-/** Supabase stays read-only. Legacy and example mode keep the existing local-editor gate. */
+/** Supabase stays read-only for index, curve, CSV, and other deferred writes. */
 export function requestMaterialMutation(
   dataSource: 'supabase' | 'legacy',
   editable: boolean,
@@ -20,4 +20,57 @@ export function requestMaterialMutation(
     return;
   }
   requestLocalEditing(editable, action, showLocalGuidance);
+}
+
+export const SUPABASE_MATERIAL_CRUD_DENIED = '目前帳號沒有材料寫入權限。';
+
+/**
+ * Legacy/example keeps storage `editable`.
+ * Supabase material add/edit/delete follows confirmed Admin only.
+ */
+export function materialCrudEnabledFor(
+  dataSource: 'supabase' | 'legacy',
+  legacyEditable: boolean,
+  supabaseAdmin: boolean,
+): boolean {
+  return dataSource === 'supabase' ? supabaseAdmin : legacyEditable;
+}
+
+/** Add, edit, and delete. This gate does not open index, curve, CSV, or Save Database. */
+export function requestMaterialCrud(
+  materialCrudEnabled: boolean,
+  dataSource: 'supabase' | 'legacy',
+  action: () => void,
+  showLocalGuidance: () => void,
+  showSupabaseDenied: () => void,
+): void {
+  if (materialCrudEnabled) {
+    action();
+    return;
+  }
+  if (dataSource === 'supabase') {
+    showSupabaseDenied();
+    return;
+  }
+  requestLocalEditing(false, action, showLocalGuidance);
+}
+
+/** Close a Supabase add/edit/delete dialog when Admin capability is no longer confirmed. */
+export function supabaseCrudDialogsShouldClose(
+  dataSource: 'supabase' | 'legacy',
+  supabaseAdmin: boolean,
+): boolean {
+  return dataSource === 'supabase' && !supabaseAdmin;
+}
+
+export function supabaseCommittedNotice(kind: 'add' | 'edit' | 'delete', name: string): string {
+  if (kind === 'delete') return `已從 Supabase 刪除 ${name}。`;
+  if (kind === 'edit') return `已更新 Supabase 材料 ${name}。`;
+  return `已新增 Supabase 材料 ${name}。`;
+}
+
+/** Close the form or delete dialog only after the direct write resolves. */
+export async function closeAfterDirectWrite(write: () => Promise<void>, close: () => void): Promise<void> {
+  await write();
+  close();
 }

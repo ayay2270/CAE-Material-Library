@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useIndexes } from '../lib/indexes';
+import { SUPABASE_EXISTING_SOURCE_REQUIRED } from '../lib/supabaseMaterialCommit';
 import type { Category, CompositeStrength, Material, MaterialInput, MaterialModel, MaterialPropertyKey, OrthotropicProperties } from '../types';
 import { COMPOSITE_STRENGTH_PROPS, COMPOSITE_SUBCATEGORIES, ORTHOTROPIC_GROUPS, ORTHOTROPIC_PROPS, PROPS, type PropDef } from '../lib/props';
 import { isOrthotropic } from '../lib/materialProperties';
@@ -9,8 +10,11 @@ import { Modal } from './Modal';
 interface Props {
   initial: Material | null; // null = new material
   existing: Material[];
-  onSave: (input: MaterialInput) => void;
+  onSave: (input: MaterialInput) => void | Promise<void>;
   onClose: () => void;
+  /** Supabase materials must use a source that already exists. Legacy keeps free text. */
+  restrictSourceToExisting?: boolean;
+  pending?: boolean;
 }
 
 const RULES: Partial<Record<MaterialPropertyKey, { min?: number; max?: number; positive?: boolean }>> = {
@@ -25,7 +29,7 @@ const RULES: Partial<Record<MaterialPropertyKey, { min?: number; max?: number; p
 
 const toText = (v: number | null) => (v === null ? '' : String(v));
 
-export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
+export function MaterialForm({ initial, existing, onSave, onClose, restrictSourceToExisting = false, pending = false }: Props) {
   const indexes = useIndexes();
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState<Category>(initial?.category ?? 'Metal');
@@ -46,6 +50,9 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
     ]),
   );
   const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -53,6 +60,7 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
     if (!n) e.name = '請輸入材料名稱。';
     else if (existing.some((m) => m.id !== initial?.id && m.name.toLowerCase() === n.toLowerCase()))
       e.name = '已有相同名稱的材料。';
+    if (restrictSourceToExisting && !indexes.sources.includes(source.trim())) e.source = SUPABASE_EXISTING_SOURCE_REQUIRED;
     for (const p of activeProps) {
       const raw = vals[p.key].trim();
       if (raw === '') continue;
@@ -64,10 +72,16 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
       else if (r?.max !== undefined && num > r.max) e[p.key] = `必須 ≤ ${r.max}。`;
     }
     return e;
-  }, [name, vals, existing, initial, orthotropic]);
+  }, [name, vals, existing, initial, orthotropic, restrictSourceToExisting, source, indexes.sources]);
+
+  const requestClose = () => {
+    if (savingRef.current) return;
+    onClose();
+  };
 
   const submit = () => {
     setSubmitted(true);
+    if (savingRef.current || pending) return;
     if (Object.keys(errors).length) return;
     const input: MaterialInput = {
       name: name.trim(),
@@ -95,7 +109,19 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
       input.orthotropic = { ...initial?.orthotropic, ...Object.fromEntries(ORTHOTROPIC_PROPS.map(p => [p.key, vals[p.key].trim() === '' ? null : Number(vals[p.key])])) } as OrthotropicProperties;
       input.compositeStrength = { ...initial?.compositeStrength, ...Object.fromEntries(COMPOSITE_STRENGTH_PROPS.map(p => [p.key, vals[p.key].trim() === '' ? null : Number(vals[p.key])])) } as CompositeStrength;
     }
-    onSave(input);
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError(null);
+    void (async () => {
+      try {
+        await onSave(input);
+      } catch (error) {
+        setSaveError(error instanceof Error && error.message ? error.message : '材料寫入失敗。');
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
+    })();
   };
 
   const err = (k: string) => (submitted || touchedHint(k)) && errors[k];
@@ -114,12 +140,12 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
     <Modal
       title={initial ? `編輯 ${initial.name}` : '新增材料'}
       width={600}
-      onClose={onClose}
+      onClose={requestClose}
       footer={
         <>
           <span className="toolbar-spacer" />
-          <button className="btn" onClick={onClose}>取消</button>
-          <button className="btn primary" onClick={submit}>{initial ? '儲存變更' : '新增'}</button>
+          <button className="btn" onClick={requestClose} disabled={saving || pending}>取消</button>
+          <button className="btn primary" onClick={submit} disabled={saving || pending}>{saving || pending ? '儲存中…' : initial ? '儲存變更' : '新增'}</button>
         </>
       }
     >
@@ -188,15 +214,27 @@ export function MaterialForm({ initial, existing, onSave, onClose }: Props) {
           </fieldset>
         </>}
 
-        <label>
-          <span>Source</span>
-          <input list="material-source-options" value={source} onChange={(e) => setSource(e.target.value)} placeholder="例如：供應商資料表、網路、提供者姓名" />
-          <datalist id="material-source-options">{indexes.sources.map(s => <option key={s} value={s}/>)}</datalist>
-        </label>
+        {restrictSourceToExisting ? (
+          <label className={submitted && errors.source ? 'invalid' : ''}>
+            <span>Source</span>
+            <select aria-label="Source" value={indexes.sources.includes(source) ? source : ''} onChange={(e) => setSource(e.target.value)}>
+              <option value="">請選擇現有來源</option>
+              {indexes.sources.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {submitted && errors.source && <em>{errors.source}</em>}
+          </label>
+        ) : (
+          <label>
+            <span>Source</span>
+            <input list="material-source-options" value={source} onChange={(e) => setSource(e.target.value)} placeholder="例如：供應商資料表、網路、提供者姓名" />
+            <datalist id="material-source-options">{indexes.sources.map(s => <option key={s} value={s}/>)}</datalist>
+          </label>
+        )}
         <label>
           <span>備註</span>
           <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="試驗條件、熱處理狀態、參考連結…" />
         </label>
+        {saveError && <p className="notice err" role="alert">{saveError}</p>}
         <p className="form-hint">數值以 mm–t–N–s 單位制儲存（密度 t/mm³、應力 MPa）。</p>
         <button type="submit" hidden />
       </form>

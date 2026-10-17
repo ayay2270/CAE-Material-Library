@@ -3,7 +3,17 @@ import type { Material, MaterialInput, View } from './types';
 import { useMaterials } from './lib/storage';
 import { EXAMPLE_ID } from './lib/orthotropicExample';
 import { DatabaseStatus } from './components/DatabaseStatus';
-import { LOCAL_EDITING_HINT, SUPABASE_WRITE_LATER, requestMaterialMutation } from './lib/localEditing';
+import {
+  LOCAL_EDITING_HINT,
+  SUPABASE_MATERIAL_CRUD_DENIED,
+  SUPABASE_WRITE_LATER,
+  closeAfterDirectWrite,
+  materialCrudEnabledFor,
+  requestMaterialCrud,
+  requestMaterialMutation,
+  supabaseCommittedNotice,
+  supabaseCrudDialogsShouldClose,
+} from './lib/localEditing';
 import { isSupabaseAdminCapability, useMaterialLibraryAuth } from './lib/useMaterialAuth';
 import { LocalEditingDialog } from './components/LocalEditingDialog';
 import { Modal } from './components/Modal';
@@ -36,7 +46,12 @@ import {
   MapInfoDialog,
 } from './components/Dialogs';
 
-type Dialog = 'help' | 'io' | 'mapInfo' | 'localEditing' | 'supabaseReadOnly' | null;
+type Dialog = 'help' | 'io' | 'mapInfo' | 'localEditing' | 'supabaseReadOnly' | 'supabaseCrudDenied' | null;
+
+// Same true-branch comparison used by storage, so a legacy build drops the Supabase write calls.
+const supabaseDataSourceEnabled = import.meta.env
+  ? import.meta.env.VITE_MATERIAL_DATA_SOURCE === 'supabase'
+  : false;
 
 export function App() {
   const materialState = useMaterials();
@@ -68,7 +83,11 @@ export function App() {
   const [editing, setEditing] = useState<Material | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Material | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleteLock = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const materialCrudEnabled = materialCrudEnabledFor(materialState.dataSource, editable, supabaseAdmin);
 
   // Drop selections that no longer exist (deleted / reset).
   useEffect(() => {
@@ -84,6 +103,13 @@ export function App() {
     const t = setTimeout(() => setNotice(null), 3500);
     return () => clearTimeout(t);
   }, [notice]);
+
+  useEffect(() => {
+    if (!supabaseCrudDialogsShouldClose(materialState.dataSource, supabaseAdmin)) return;
+    setEditing(null);
+    setDeleting(null);
+    setDeleteError(null);
+  }, [materialState.dataSource, supabaseAdmin]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -127,7 +153,19 @@ export function App() {
         : { key, dir: 'asc' },
     );
 
-  const save = (input: MaterialInput) => {
+  const save = async (input: MaterialInput) => {
+    if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase' && 'materialMutations' in materialState && materialState.materialMutations) {
+      const mutations = materialState.materialMutations;
+      const editingId = editing && editing !== 'new' ? editing.id : null;
+      await closeAfterDirectWrite(async () => {
+        if (editingId) await mutations.updateMaterial(editingId, input);
+        else await mutations.add(input);
+      }, () => {
+        setNotice(supabaseCommittedNotice(editingId ? 'edit' : 'add', input.name));
+        setEditing(null);
+      });
+      return;
+    }
     const saveHint = materialState.exampleMode ? '請按「儲存範例」保留在此分頁。' : '請按 Save Database 寫入資料庫。';
     if (editing && editing !== 'new') {
       update(editing.id, input);
@@ -140,11 +178,32 @@ export function App() {
   };
 
   const confirmDelete = () => {
-    if (!deleting) return;
-    remove(deleting.id);
-    setNotice(`已從草稿刪除 ${deleting.name}；請按 Save Database。`);
-    if (detailId === deleting.id) setDetailId(null);
-    setDeleting(null);
+    if (!deleting || deleteLock.current) return;
+    const target = deleting;
+    if (!(supabaseDataSourceEnabled && materialState.dataSource === 'supabase' && 'materialMutations' in materialState && materialState.materialMutations)) {
+      remove(target.id);
+      setNotice(`已從草稿刪除 ${target.name}；請按 Save Database。`);
+      if (detailId === target.id) setDetailId(null);
+      setDeleting(null);
+      return;
+    }
+    const mutations = materialState.materialMutations;
+    deleteLock.current = true;
+    setDeletePending(true);
+    setDeleteError(null);
+    void closeAfterDirectWrite(
+      () => mutations.remove(target.id),
+      () => {
+        setNotice(supabaseCommittedNotice('delete', target.name));
+        if (detailId === target.id) setDetailId(null);
+        setDeleting(current => current?.id === target.id ? null : current);
+      },
+    ).catch(error => {
+      setDeleteError(error instanceof Error && error.message ? error.message : '材料刪除失敗。');
+    }).finally(() => {
+      deleteLock.current = false;
+      setDeletePending(false);
+    });
   };
 
   const openDetail = (m: Material) => setDetailId(m.id);
@@ -152,22 +211,25 @@ export function App() {
   const navigate = (v: View) => setView(v);
   const showLocalEditing = () => setDialog('localEditing');
   const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
-  const readOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_WRITE_LATER : LOCAL_EDITING_HINT;
-  // Admin capability is for a later step. It does not open the mutation gate.
-  void supabaseAdmin;
+  const crudReadOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_MATERIAL_CRUD_DENIED : LOCAL_EDITING_HINT;
+  // Index, curve, CSV, and Save Database stay on the deferred Supabase gate.
   const requestEdit = (action: () => void) => requestMaterialMutation(
     materialState.dataSource, editable, action, showLocalEditing, showSupabaseReadOnly,
+  );
+  const showSupabaseCrudDenied = () => setDialog('supabaseCrudDenied');
+  const requestCrud = (action: () => void) => requestMaterialCrud(
+    materialCrudEnabled, materialState.dataSource, action, showLocalEditing, showSupabaseCrudDenied,
   );
 
   return (
     <IndexContext.Provider value={indexes}>
     <div className="app">
       <Header
-        editable={editable}
-        readOnlyTitle={readOnlyTitle}
+        editable={materialCrudEnabled}
+        readOnlyTitle={crudReadOnlyTitle}
         databaseStatus={<DatabaseStatus state={materialState} auth={auth} />}
         onHelp={() => setDialog('help')}
-        onAdd={() => requestEdit(() => setEditing('new'))}
+        onAdd={() => requestCrud(() => setEditing('new'))}
       />
       {materialState.exampleMode && <section className="orthotropic-example-banner" aria-label="FR4 獨立範例">
         <div><strong>FR4 Orthotropic 獨立範例</strong><p>可新增、編輯與比較；儲存僅限此分頁，重新整理會保留。原始 materials.json 與 FR4 density 不受影響。</p></div>
@@ -228,8 +290,8 @@ export function App() {
               />
               {libraryMode === 'table' ? (
                 <MaterialTable
-                  editable={editable}
-                  readOnlyTitle={readOnlyTitle}
+                  editable={materialCrudEnabled}
+                  readOnlyTitle={crudReadOnlyTitle}
                   rows={rows}
                   total={materials.length}
                   columns={cols.visible}
@@ -239,8 +301,8 @@ export function App() {
                   onToggle={toggle}
                   onClearSelection={() => setSelected([])}
                   onOpen={openDetail}
-                  onEdit={(m) => requestEdit(() => setEditing(m))}
-                  onDelete={(m) => requestEdit(() => setDeleting(m))}
+                  onEdit={(m) => requestCrud(() => setEditing(m))}
+                  onDelete={(m) => requestCrud(() => { setDeleteError(null); setDeleting(m); })}
                   units={units}
                   activeId={detailId}
                 />
@@ -288,12 +350,13 @@ export function App() {
       {detail && !editing && !deleting && (
         <MaterialDrawer
           editable={editable}
-          readOnlyTitle={readOnlyTitle}
+          materialCrudEnabled={materialCrudEnabled}
+          readOnlyTitle={crudReadOnlyTitle}
           material={detail}
           units={units}
           onClose={() => setDetailId(null)}
-          onEdit={() => requestEdit(() => setEditing(detail))}
-          onDelete={() => requestEdit(() => setDeleting(detail))}
+          onEdit={() => requestCrud(() => setEditing(detail))}
+          onDelete={() => requestCrud(() => { setDeleteError(null); setDeleting(detail); })}
           onSaveCurve={(data) => {
             const error = setCurve(detail.id, data);
             if (!error) setNotice(`已更新 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
@@ -301,20 +364,25 @@ export function App() {
           }}
         />
       )}
-      {editing && editable && (
+      {editing && materialCrudEnabled && (
         <MaterialForm
           key={editing === 'new' ? 'new' : editing.id}
           initial={editing === 'new' ? null : editing}
           existing={materials}
+          restrictSourceToExisting={materialState.dataSource === 'supabase'}
+          pending={materialState.materialWriting}
           onSave={save}
           onClose={() => setEditing(null)}
         />
       )}
-      {deleting && editable && (
+      {deleting && materialCrudEnabled && (
         <ConfirmDelete
           material={deleting}
+          direct={materialState.dataSource === 'supabase'}
+          pending={deletePending}
+          error={deleteError}
           onConfirm={confirmDelete}
-          onClose={() => setDeleting(null)}
+          onClose={() => { if (!deletePending) { setDeleteError(null); setDeleting(null); } }}
         />
       )}
       {indexManager && editable && (
@@ -334,6 +402,7 @@ export function App() {
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
       {dialog === 'localEditing' && <LocalEditingDialog onClose={() => setDialog(null)} supported={materialState.fileSupported} permissionNeeded={materialState.fileStatus === 'permission'} onConnect={() => { setDialog(null); void materialState.connectFile(); }} />}
       {dialog === 'supabaseReadOnly' && <Modal title="Supabase（唯讀）" width={440} onClose={() => setDialog(null)}><p>{SUPABASE_WRITE_LATER}</p></Modal>}
+      {dialog === 'supabaseCrudDenied' && <Modal title="沒有材料寫入權限" width={440} onClose={() => setDialog(null)}><p>{SUPABASE_MATERIAL_CRUD_DENIED}</p></Modal>}
       {dialog === 'mapInfo' && (
         <MapInfoDialog onClose={() => setDialog(null)} />
       )}

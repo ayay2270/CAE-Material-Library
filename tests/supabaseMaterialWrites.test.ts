@@ -309,16 +309,16 @@ test('write module has no upsert, category or source writes, or service credenti
   assert.equal(source.includes("from('materials')"), true);
 });
 
-test('application runtime does not call the material write adapter', async () => {
+test('only storage reaches the material write adapter, and only behind the Supabase flag', async () => {
   const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
   const storage = await readFile(new URL('../src/lib/storage.ts', import.meta.url), 'utf8');
   const editing = await readFile(new URL('../src/lib/localEditing.ts', import.meta.url), 'utf8');
-  for (const source of [app, storage]) {
-    assert.equal(source.includes('supabaseMaterialWrites'), false);
-    assert.equal(source.includes('insertSupabaseMaterial'), false);
-    assert.equal(source.includes('updateSupabaseMaterial'), false);
-    assert.equal(source.includes('deleteSupabaseMaterial'), false);
+  for (const token of ['supabaseMaterialWrites', 'insertSupabaseMaterial', 'updateSupabaseMaterial', 'deleteSupabaseMaterial']) {
+    assert.equal(app.includes(token), false, token);
+    assert.equal(editing.includes(token), false, token);
   }
+  assert.equal(storage.includes("from './supabaseMaterialWrites'"), true);
+  assert.match(storage, /const supabaseMaterialWriters = supabaseReadOnly\s*\?\s*\{ insertSupabaseMaterial, updateSupabaseMaterial, deleteSupabaseMaterial \}/);
   assert.match(storage, /const editable = !supabaseActive && \(exampleMode \|\| fileStatus === 'linked'/);
   assert.equal(editing.includes('Supabase 目前為唯讀模式；寫入功能將於下一階段開放。'), true);
 });
