@@ -372,7 +372,7 @@ test('Supabase admin wiring keeps CSV and Save Database closed', async () => {
   assert.match(app, /<ImportExportDialog[\s\S]*?editable=\{editable\}/);
   assert.match(app, /readOnlyHint=\{materialState\.dataSource === 'supabase' \? SUPABASE_WRITE_LATER : undefined\}/);
   assert.match(app, /<MaterialDrawer[\s\S]*?editable=\{editable\}[\s\S]*?materialCrudEnabled=\{materialCrudEnabled\}/);
-  assert.match(drawer, /<StressStrainSection key=\{m\.id\} material=\{m\} units=\{units\} onSave=\{onSaveCurve\} editable=\{curveEditable\} pending=\{curvePending\} \/>/);
+  assert.match(drawer, /<StressStrainSection key=\{m\.id\} material=\{m\} units=\{units\} onSave=\{onSaveCurve\} onDelete=\{onDeleteCurve\} editable=\{curveEditable\} pending=\{curvePending\} \/>/);
   assert.match(status, /\{editable && <button className="btn" disabled=\{!dirty \|\| saving\} onClick=\{\(\) => void saveDatabase\(\)\}>Save Database<\/button>\}/);
   assert.match(sidebar, /\{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理材料分類"/);
   assert.match(sidebar, /\{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理 SOURCE"/);
@@ -411,7 +411,7 @@ const uiBuild = buildSync({
       import { ConfirmDelete } from './src/components/Dialogs';
       import { StressStrainSection } from './src/components/StressStrainSection';
       import { IndexContext } from './src/lib/indexes';
-      export { describeChanges, newMaterialId } from './src/lib/storage';
+      export { describeChanges, newMaterialId, clearStoredCurveDraft } from './src/lib/storage';
       const indexes = { categories: [{ id: 'Metal', label: '金屬', color: '#2563eb' }], sources: ['Supplier', 'Web'] };
       const material = { id: 'm1', name: 'ADC12', category: 'Metal', source: 'Web', notes: '', density: null, youngsModulus: null, poissonRatio: null, yieldStress: null, etan: null, ultimateStress: null, elongation: null, updatedAt: '2026-01-01T00:00:00.000Z', history: [{ at: '2026-01-01T00:00:00.000Z', action: 'created', summary: '建立記錄' }] };
       const units = { density: 't/mm³', stress: 'MPa' };
@@ -490,4 +490,76 @@ test('Supabase admin can use material edit and delete while the curve stays read
 
 test('empty material id is refused before a Supabase insert payload exists', () => {
   assert.throws(() => materialFromInput(inputOf(material('new', 'New')), NOW, ''), /缺少材料 id/);
+});
+
+test('legacy clear removes only the stored curve and leaves Save Database responsible for the dirty draft', async () => {
+  const clearStoredCurveDraft = ui.clearStoredCurveDraft as unknown as (
+    materials: Material[],
+    id: string,
+    editable: boolean,
+    now: string,
+  ) => { materials: Material[]; error: string | null };
+  const kept: Material = {
+    ...material('kept', 'ADC12'),
+    notes: '保留備註',
+    density: 2.82e-9,
+    youngsModulus: 71000,
+    poissonRatio: 0.3,
+    yieldStress: 165,
+    etan: 8002.05,
+    ultimateStress: 336,
+    elongation: 2.5,
+    materialModel: 'Orthotropic',
+    subCategory: '板',
+    orthotropic: { e1: 10, e2: 20, e3: 30, g12: 4, g13: 5, g23: 6, nu12: 0.1, nu13: 0.2, nu23: 0.3 },
+    compositeStrength: { xt: 1, xc: 2, yt: 3, yc: 4, s12: 5 },
+  };
+  const other = material('other', 'Other', 'Supplier');
+  const saved = database([kept, other]);
+  const now = '2026-10-17T18:00:00.000Z';
+  const blocked = clearStoredCurveDraft(saved.materials, 'kept', false, now);
+  assert.match(blocked.error ?? '', /唯讀/);
+  assert.equal(blocked.materials, saved.materials);
+  const missing = clearStoredCurveDraft(saved.materials, 'gone', true, now);
+  assert.match(missing.error ?? '', /材料已不存在/);
+  assert.equal(missing.materials, saved.materials);
+  const result = clearStoredCurveDraft(saved.materials, 'kept', true, now);
+  assert.equal(result.error, null);
+  const cleared = result.materials[0];
+  assert.equal(cleared.name, 'ADC12');
+  assert.equal(cleared.category, kept.category);
+  assert.equal(cleared.source, kept.source);
+  assert.equal(cleared.notes, kept.notes);
+  assert.equal(cleared.stressStrainCurve, null);
+  assert.equal(cleared.updatedAt, now);
+  assert.notEqual(cleared.updatedAt, kept.updatedAt);
+  assert.equal(cleared.history[0]?.action, 'edited');
+  assert.equal(cleared.history[0]?.summary, 'Stress–strain curve：已移除完整曲線');
+  assert.equal(cleared.history[0]?.at, now);
+  assert.deepEqual(cleared.history.slice(1), kept.history);
+  assert.equal(cleared.density, kept.density);
+  assert.equal(cleared.youngsModulus, kept.youngsModulus);
+  assert.equal(cleared.poissonRatio, kept.poissonRatio);
+  assert.equal(cleared.yieldStress, kept.yieldStress);
+  assert.equal(cleared.etan, kept.etan);
+  assert.equal(cleared.ultimateStress, kept.ultimateStress);
+  assert.equal(cleared.elongation, kept.elongation);
+  assert.equal(cleared.materialModel, kept.materialModel);
+  assert.equal(cleared.subCategory, kept.subCategory);
+  assert.equal(cleared.orthotropic, kept.orthotropic);
+  assert.equal(cleared.compositeStrength, kept.compositeStrength);
+  assert.equal(result.materials[1], other);
+  assert.equal(kept.stressStrainCurve, curve);
+  const draft = validateDatabase({ ...saved, materials: result.materials });
+  assert.equal(databaseIsDirty(draft, saved), true);
+  const again = clearStoredCurveDraft(result.materials, 'kept', true, now);
+  assert.match(again.error ?? '', /目前沒有已儲存的完整曲線/);
+  assert.equal(again.materials, result.materials);
+  const storage = await readFile(new URL('../src/lib/storage.ts', import.meta.url), 'utf8');
+  const clear = storage.slice(storage.indexOf('const clearCurve ='), storage.indexOf('const importMany ='));
+  assert.match(clear, /clearStoredCurveDraft\(/);
+  assert.match(clear, /setMaterials\(result\.materials\)/);
+  assert.equal(clear.includes('saveDatabase'), false);
+  assert.match(storage, /const saveDatabase = async \(\) => \{\s*if \(!editable \|\| savingRef\.current\) return;/);
+  assert.match(storage, /discardDraft, setCurve, clearCurve, indexes/);
 });

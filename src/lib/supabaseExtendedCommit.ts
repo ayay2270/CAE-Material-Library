@@ -44,6 +44,23 @@ export async function commitSupabaseCurve(
   });
 }
 
+export async function commitSupabaseCurveClear(
+  database: MasterDatabase,
+  id: string,
+  write: (id: string) => Promise<Material>,
+): Promise<MasterDatabase> {
+  const existing = database.materials.find(row => row.id === id);
+  if (!existing) throw new Error('材料不存在或目前帳號沒有更新權限。');
+  if (!isStressStrainData(existing.stressStrainCurve)) throw new Error('Supabase 移除曲線失敗：目前沒有已儲存的完整曲線。');
+  const returned = await write(id);
+  if (returned.id !== id) throw new Error('Supabase 移除曲線失敗：回傳的材料 id 不正確。');
+  if (isStressStrainData(returned.stressStrainCurve)) throw new Error('Supabase 移除曲線失敗：回傳的材料仍包含完整曲線。');
+  return validateDatabase({
+    ...database,
+    materials: database.materials.map(row => row.id === id ? returned : row),
+  });
+}
+
 export async function commitSupabaseCategoryAdd(
   database: MasterDatabase,
   name: string,

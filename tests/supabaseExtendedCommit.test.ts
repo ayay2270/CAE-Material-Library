@@ -8,11 +8,13 @@ import {
   commitSupabaseCategoryAdd,
   commitSupabaseCategoryRename,
   commitSupabaseCurve,
+  commitSupabaseCurveClear,
   commitSupabaseSourceAdd,
   commitSupabaseSourceRename,
 } from '../src/lib/supabaseExtendedCommit';
 import { SUPABASE_WRITE_IN_PROGRESS, createWriteLock, runSupabaseMaterialMutation } from '../src/lib/supabaseMaterialCommit';
 import { SUPABASE_SOURCE_RENAME_REMOTE_COMMITTED } from '../src/lib/supabaseExtendedWrites';
+import { isStressStrainData } from '../src/lib/curveData';
 import { isSupabaseAdminCapability } from '../src/lib/useMaterialAuth';
 import type { MaterialAdminStatus } from '../src/lib/supabaseAuth';
 import type { MasterDatabase } from '../src/lib/database-schema.mjs';
@@ -98,6 +100,68 @@ test('curve commit leaves the original database unchanged when the write fails',
   })), /回傳的曲線與送出的曲線不一致/);
   assert.equal(original.materials[0].stressStrainCurve, curve);
   assert.deepEqual(original.indexes.categories.map(row => row.id), ['Metal', 'Plastic']);
+});
+
+test('curve clear commit replaces only the returned material and keeps the server history', async () => {
+  const original = database();
+  const returned: Material = {
+    ...original.materials[0],
+    notes: '伺服器保留',
+    stressStrainCurve: null,
+    updatedAt: '2026-10-17T18:00:00.000Z',
+    history: [
+      { at: '2026-10-17T18:00:00.000Z', action: 'edited', summary: 'Stress–strain curve：已移除完整曲線' },
+      ...original.materials[0].history,
+    ],
+  };
+  let calls = 0;
+  const next = await commitSupabaseCurveClear(original, 'kept', async (id) => {
+    calls += 1;
+    assert.equal(id, 'kept');
+    return returned;
+  });
+  assert.equal(calls, 1);
+  assert.equal(next.materials[0], returned);
+  assert.equal(next.materials[0].history, returned.history);
+  assert.equal(next.materials[0].updatedAt, returned.updatedAt);
+  assert.equal(next.materials[0].history.length, returned.history.length);
+  assert.equal(isStressStrainData(next.materials[0].stressStrainCurve), false);
+  assert.equal(next.materials[0].name, original.materials[0].name);
+  assert.equal(next.materials[0].youngsModulus, original.materials[0].youngsModulus);
+  assert.equal(next.materials[1], original.materials[1]);
+  assert.equal(original.materials[0].stressStrainCurve, curve);
+  assert.equal(original.materials[0].history.length, 1);
+  assert.equal(validateDatabase(next), next);
+});
+
+test('curve clear commit refuses a missing material or a material without a stored curve before writing', async () => {
+  const original = database();
+  let calls = 0;
+  const write = async () => {
+    calls += 1;
+    return original.materials[0];
+  };
+  await assert.rejects(commitSupabaseCurveClear(original, 'missing', write), /材料不存在/);
+  const bare = database([{ ...material('kept'), stressStrainCurve: null }, material('other', 'Supplier')]);
+  await assert.rejects(commitSupabaseCurveClear(bare, 'kept', write), /目前沒有已儲存的完整曲線/);
+  assert.equal(calls, 0);
+  assert.equal(original.materials[0].stressStrainCurve, curve);
+});
+
+test('curve clear commit keeps the original database when the returned row still has a curve or a different id', async () => {
+  const original = database();
+  let calls = 0;
+  await assert.rejects(commitSupabaseCurveClear(original, 'kept', async () => {
+    calls += 1;
+    return original.materials[0];
+  }), /回傳的材料仍包含完整曲線/);
+  await assert.rejects(commitSupabaseCurveClear(original, 'kept', async () => {
+    calls += 1;
+    return { ...original.materials[0], id: 'other', stressStrainCurve: null };
+  }), /回傳的材料 id 不正確/);
+  assert.equal(calls, 2);
+  assert.equal(original.materials[0].stressStrainCurve, curve);
+  assert.equal(original.materials[1].id, 'other');
 });
 
 test('category add keeps a zero-count category and does not change materials', async () => {
@@ -340,9 +404,12 @@ test('storage keeps one write lock and does not let the UI reach extended mutati
   assert.match(storage, /extendedMutations = supabaseExtendedWriters \? \{/);
   assert.match(storage, /return supabaseReadOnly \? \{ \.\.\.state, materialMutations, extendedMutations \} : state/);
   assert.equal(storage.includes('saveCurve(id: string, curve: StressStrainData)'), true);
+  assert.equal(storage.includes('clearCurve(id: string)'), true);
+  assert.match(storage, /commitSupabaseCurveClear\(/);
   assert.equal(storage.includes('renameSource(oldName: string, newName: string)'), true);
   const editing = await readFile(new URL('../src/lib/localEditing.ts', import.meta.url), 'utf8');
   assert.match(app, /extendedMutations\.saveCurve\(detail\.id, data\)/);
+  assert.match(app, /extendedMutations\.clearCurve\(detail\.id\)/);
   assert.match(app, /commitSupabaseIndexWrite\(/);
   assert.match(editing, /mutations\.addCategory\(name\)/);
   assert.match(editing, /mutations\.renameCategory\(id, name\)/);

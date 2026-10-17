@@ -12,18 +12,21 @@ import {
 } from '../lib/curveData';
 import { FullStressStrainPlot } from './FullStressStrainPlot';
 import { StressStrainCurve } from './StressStrainCurve';
-import { UploadIcon, DownloadIcon, EditIcon, PlusIcon } from './icons';
+import { UploadIcon, DownloadIcon, EditIcon, PlusIcon, TrashIcon } from './icons';
 
 export function StressStrainSection({
   material,
   units,
   onSave,
+  onDelete,
   editable,
   pending = false,
 }: {
   material: Material;
   units: UnitPrefs;
   onSave: (data: StressStrainData) => string | null | Promise<string | null>;
+  /** Removes only the stored full curve. Absent callers keep the previous read-only curve view. */
+  onDelete?: () => string | null | Promise<string | null>;
   editable: boolean;
   /** Another shared Supabase write is already in flight. */
   pending?: boolean;
@@ -44,11 +47,17 @@ export function StressStrainSection({
   const [notes, setNotes] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [plotStrainUnit, setPlotStrainUnit] = useState<StrainUnit>('mm/mm');
   const fileRef = useRef<HTMLInputElement>(null);
   const fileRequest = useRef(0);
   const saveLock = useRef(false);
+  const deleteLock = useRef(false);
   const busy = saving || pending;
+  const deleteBusy = deleting || pending;
+  const activeMode = stored ? mode : 'idealized';
   const parsed = useMemo(
     () => parseCurvePoints(text, strainUnit, stressUnit),
     [text, strainUnit, stressUnit],
@@ -66,8 +75,16 @@ export function StressStrainSection({
     setEditing(false);
     setMessage(null);
   }, [editable, busy, editing]);
+  useEffect(() => {
+    if (stored) return;
+    setMode('idealized');
+    setConfirmingDelete(false);
+    setDeleteMessage(null);
+  }, [stored]);
   const beginEdit = () => {
-    if (!editable || busy) return;
+    if (!editable || busy || deleting) return;
+    setConfirmingDelete(false);
+    setDeleteMessage(null);
     fileRequest.current++;
     setText(
       stored
@@ -109,6 +126,36 @@ export function StressStrainSection({
       setSaving(false);
     }
   };
+  const askDelete = () => {
+    if (!onDelete || !stored || !editable || editing || deleteBusy || confirmingDelete) return;
+    setDeleteMessage(null);
+    setConfirmingDelete(true);
+  };
+  const cancelDelete = () => {
+    if (deleteLock.current || deleteBusy) return;
+    setConfirmingDelete(false);
+    setDeleteMessage(null);
+  };
+  const confirmDelete = async () => {
+    if (!onDelete || deleteLock.current || deleteBusy || !stored) return;
+    deleteLock.current = true;
+    setDeleting(true);
+    setDeleteMessage(null);
+    try {
+      const error = await Promise.resolve(onDelete());
+      if (error) setDeleteMessage(error);
+      else {
+        setConfirmingDelete(false);
+        setDeleteMessage(null);
+        setMode('idealized');
+      }
+    } catch (error) {
+      setDeleteMessage(error instanceof Error && error.message ? error.message : '曲線刪除失敗。');
+    } finally {
+      deleteLock.current = false;
+      setDeleting(false);
+    }
+  };
   const readFile = async (file?: File) => {
     if (!file) return;
     const request = ++fileRequest.current;
@@ -134,8 +181,8 @@ export function StressStrainSection({
           曲線資料來源
           <select
             aria-label="曲線資料來源"
-            value={mode}
-            disabled={editing}
+            value={activeMode}
+            disabled={editing || deleting}
             onChange={(event) => setMode(event.target.value)}
           >
             <option value="idealized">材料性質推算曲線</option>
@@ -146,12 +193,33 @@ export function StressStrainSection({
           </select>
         </label>
         {!editing && editable && (
-          <button className="btn" disabled={pending} onClick={beginEdit}>
+          <button className="btn" disabled={pending || deleting || confirmingDelete} onClick={beginEdit}>
             {stored ? <EditIcon /> : <PlusIcon />}
             {stored ? '編輯完整曲線' : '加入完整曲線'}
           </button>
         )}
+        {stored && !editing && editable && onDelete && (
+          <button
+            className="btn danger-outline"
+            disabled={pending || deleting || confirmingDelete}
+            onClick={askDelete}
+          >
+            <TrashIcon /> 刪除完整曲線
+          </button>
+        )}
       </div>
+      {confirmingDelete && stored && !editing && (
+        <div className="curve-delete-confirm" role="alertdialog" aria-label="刪除完整曲線">
+          <p>只會刪除這筆材料儲存的完整 Stress–strain 曲線，材料本身與其他材料性質不會刪除。</p>
+          {deleteMessage && <div className="notice err" role="alert">{deleteMessage}</div>}
+          <div className="curve-save-actions">
+            <button className="btn" disabled={deleteBusy} onClick={cancelDelete}>取消</button>
+            <button className="btn danger" disabled={deleteBusy} onClick={() => void confirmDelete()}>
+              {deleting ? '刪除中…' : '刪除完整曲線'}
+            </button>
+          </div>
+        </div>
+      )}
       {editing ? (
         <div className="form curve-editor">
           <h3>完整 Stress–strain 數據</h3>
@@ -319,7 +387,7 @@ export function StressStrainSection({
             </button>
           </div>
         </div>
-      ) : mode === 'full' && stored ? (
+      ) : activeMode === 'full' && stored ? (
         <>
           <div className="curve-display-tools">
             <label>

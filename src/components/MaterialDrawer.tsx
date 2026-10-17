@@ -26,6 +26,8 @@ interface Props {
   onEdit: () => void;
   onDelete: () => void;
   onSaveCurve: (data: StressStrainData) => string | null | Promise<string | null>;
+  /** Removes only the stored full curve. Whole-material delete stays on `onDelete`. */
+  onDeleteCurve?: () => string | null | Promise<string | null>;
   readOnlyTitle?: string;
 }
 
@@ -39,7 +41,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 const ACTION_LABEL = { created: '建立', edited: '編輯', imported: '匯入' } as const;
 
-export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve, editable, materialCrudEnabled = editable, curveEditable = editable, curvePending = false, readOnlyTitle = LOCAL_EDITING_HINT }: Props) {
+export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, onSaveCurve, onDeleteCurve, editable, materialCrudEnabled = editable, curveEditable = editable, curvePending = false, readOnlyTitle = LOCAL_EDITING_HINT }: Props) {
   const indexes = useIndexes();
   const [tab, setTab] = useState<Tab>('props');
 
@@ -97,7 +99,7 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
           </>
         )}
 
-        {tab === 'curve' && <StressStrainSection key={m.id} material={m} units={units} onSave={onSaveCurve} editable={curveEditable} pending={curvePending} />}
+        {tab === 'curve' && <StressStrainSection key={m.id} material={m} units={units} onSave={onSaveCurve} onDelete={onDeleteCurve} editable={curveEditable} pending={curvePending} />}
 
         {tab === 'source' && (
           <dl className="meta-grid">

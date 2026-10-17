@@ -83,6 +83,32 @@ async function callRpc(client: SupabaseRpcClient | undefined, fn: string, args: 
   }
 }
 
+export async function clearSupabaseMaterialCurve(
+  id: string,
+  client?: SupabaseRpcClient,
+): Promise<Material> {
+  const label = 'Supabase 移除曲線失敗：';
+  if (!id.trim()) throw fail(label, '缺少材料 id。');
+  const data = await callRpc(client, 'clear_material_curve', {
+    p_material_id: id,
+  }, label);
+  if (!Array.isArray(data) || data.length === 0) throw fail(label, '沒有回傳寫入後的材料。');
+  if (data.length !== 1) throw fail(label, '回傳資料列數量不正確。');
+  const row = data[0];
+  if (!row || typeof row !== 'object' || Array.isArray(row)) throw fail(label, '回傳資料列不正確。');
+  let material: Material;
+  try {
+    material = mapMaterialRow(row as MaterialRow);
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith(label)) throw error;
+    const message = error instanceof Error ? error.message : '回傳資料列不正確。';
+    throw fail(label, message);
+  }
+  if (material.id !== id) throw fail(label, '回傳的材料 id 不正確。');
+  if (isStressStrainData(material.stressStrainCurve)) throw fail(label, '回傳的材料仍包含完整曲線。');
+  return material;
+}
+
 export async function updateSupabaseMaterialCurve(
   id: string,
   curve: StressStrainData,

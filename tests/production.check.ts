@@ -34,6 +34,7 @@ test('production has browser-selected file access but no server filesystem endpo
     assert.equal(js.includes('資料來源 · Supabase（唯讀）'), false, 'supabase production no longer calls the whole source read-only');
     for (const token of [
       'update_material_curve',
+      'clear_material_curve',
       'add_material_category',
       'rename_material_category_label',
       'add_material_source',
@@ -55,6 +56,8 @@ test('production has browser-selected file access but no server filesystem endpo
       'supabaseMaterialWrites',
       'supabaseMaterialCommit',
       'update_material_curve',
+      'clear_material_curve',
+      'clearSupabaseMaterialCurve',
       'add_material_category',
       'rename_material_category_label',
       'add_material_source',

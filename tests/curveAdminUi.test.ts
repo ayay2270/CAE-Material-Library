@@ -75,6 +75,15 @@ test('Supabase curve save is direct and legacy curve save stays a local draft', 
   assert.equal(curve.includes('updateMaterial'), false);
   assert.match(curve, /const error = setCurve\(detail\.id, data\)/);
   assert.match(curve, /已更新 \$\{detail\.name\} 的完整曲線草稿；請按 Save Database。/);
+  const deleted = app.slice(app.indexOf('onDeleteCurve={async'), app.indexOf('/>', app.indexOf('onDeleteCurve={async')));
+  const directDelete = deleted.slice(deleted.indexOf('extendedMutations.clearCurve'), deleted.indexOf('const error = clearCurve'));
+  assert.match(deleted, /extendedMutations\.clearCurve\(\s*detail\.id\s*\)/);
+  assert.match(deleted, /已刪除 Supabase 材料完整曲線：\$\{detail\.name\}。/);
+  assert.equal(directDelete.includes('Save Database'), false);
+  assert.equal(directDelete.includes('草稿'), false);
+  assert.equal(directDelete.includes('setCurve('), false);
+  assert.match(deleted, /const error = clearCurve\(detail\.id\)/);
+  assert.match(deleted, /已移除 \$\{detail\.name\} 的完整曲線草稿；請按 Save Database。/);
   assert.equal(curve.slice(curve.indexOf('extendedMutations.saveCurve'), curve.indexOf('const error = setCurve')).includes('Save Database'), false);
   assert.equal(curve.slice(curve.indexOf('extendedMutations.saveCurve'), curve.indexOf('const error = setCurve')).includes('草稿'), false);
   assert.match(app, /curveEditable=\{curveWriteEnabled\}/);
@@ -350,4 +359,161 @@ test('a synchronous curve error stays open and a synchronous success closes the 
   assert.equal(successElement.textContent?.includes('編輯完整曲線'), false);
   assert.match(successElement.textContent ?? '', /匯出曲線 CSV/);
   successRoot.unmount();
+}));
+
+const storedMaterial: Material = { ...material, stressStrainCurve: storedCurve };
+
+test('delete curve is visible for an editable stored curve and hidden otherwise', () => {
+  const admin = renderToStaticMarkup(createElement(StressStrainSection, {
+    material: storedMaterial,
+    units,
+    editable: true,
+    onSave: () => null,
+    onDelete: () => null,
+  }));
+  assert.match(admin, /刪除完整曲線/);
+  assert.match(admin, /danger-outline/);
+  assert.match(admin, /編輯完整曲線/);
+  assert.match(admin, /匯出曲線 CSV/);
+  const noCurve = renderToStaticMarkup(createElement(StressStrainSection, {
+    material,
+    units,
+    editable: true,
+    onSave: () => null,
+    onDelete: () => null,
+  }));
+  assert.equal(noCurve.includes('刪除完整曲線'), false);
+  assert.match(noCurve, /加入完整曲線/);
+  const nonAdmin = renderToStaticMarkup(createElement(StressStrainSection, {
+    material: storedMaterial,
+    units,
+    editable: false,
+    onSave: () => null,
+    onDelete: () => null,
+  }));
+  assert.equal(nonAdmin.includes('刪除完整曲線'), false);
+  assert.equal(nonAdmin.includes('編輯完整曲線'), false);
+  assert.match(nonAdmin, /匯出曲線 CSV/);
+});
+
+function button(root: ParentNode, text: string) {
+  return [...root.querySelectorAll('button')].find(item => item.textContent?.includes(text));
+}
+
+test('curve delete asks for confirmation and cancel leaves the stored curve', async () => withDom(async () => {
+  const rootElement = installDom();
+  const { createRoot } = await import('react-dom/client');
+  const { act } = await import('react');
+  const root = createRoot(rootElement);
+  let calls = 0;
+  await act(async () => {
+    root.render(createElement(StressStrainSection, {
+      material: storedMaterial,
+      units,
+      editable: true,
+      onSave: () => null,
+      onDelete: () => { calls += 1; return null; },
+    }));
+  });
+  await act(async () => { button(rootElement, '刪除完整曲線')!.click(); });
+  const dialog = rootElement.querySelector('[role="alertdialog"]');
+  assert.ok(dialog);
+  assert.match(dialog?.textContent ?? '', /只會刪除這筆材料儲存的完整 Stress–strain 曲線，材料本身與其他材料性質不會刪除。/);
+  assert.equal(calls, 0);
+  await act(async () => { button(dialog!, '取消')!.click(); });
+  assert.equal(calls, 0);
+  assert.equal(rootElement.querySelector('[role="alertdialog"]'), null);
+  assert.match(rootElement.textContent ?? '', /匯出曲線 CSV/);
+  assert.match(rootElement.textContent ?? '', /編輯完整曲線/);
+  const mode = rootElement.querySelector('select') as HTMLSelectElement;
+  assert.equal(mode.value, 'full');
+  root.unmount();
+}));
+
+test('confirming curve delete calls onDelete once, blocks a second click, and returns to idealized', async () => withDom(async () => {
+  const rootElement = installDom();
+  const { createRoot } = await import('react-dom/client');
+  const { act } = await import('react');
+  const root = createRoot(rootElement);
+  let calls = 0;
+  let release = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let current: Material = storedMaterial;
+  const render = () => {
+    root.render(createElement(StressStrainSection, {
+      material: current,
+      units,
+      editable: true,
+      onSave: () => null,
+      onDelete: () => {
+        calls += 1;
+        return gate.then(() => {
+          current = material;
+          render();
+          return null;
+        });
+      },
+    }));
+  };
+  await act(async () => { render(); });
+  await act(async () => { button(rootElement, '刪除完整曲線')!.click(); });
+  const confirm = button(rootElement.querySelector('[role="alertdialog"]')!, '刪除完整曲線')!;
+  const cancel = button(rootElement.querySelector('[role="alertdialog"]')!, '取消')!;
+  await act(async () => {
+    confirm.click();
+    confirm.click();
+  });
+  assert.equal(calls, 1);
+  assert.match(confirm.textContent ?? '', /刪除中…/);
+  assert.equal(confirm.hasAttribute('disabled'), true);
+  assert.equal(cancel.hasAttribute('disabled'), true);
+  await act(async () => {
+    release();
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+  await flush();
+  assert.equal(calls, 1);
+  assert.equal(rootElement.textContent?.includes('刪除完整曲線'), false);
+  assert.equal(rootElement.textContent?.includes('匯出曲線 CSV'), false);
+  assert.equal(rootElement.textContent?.includes('編輯完整曲線'), false);
+  assert.match(rootElement.textContent ?? '', /加入完整曲線/);
+  const mode = rootElement.querySelector('select') as HTMLSelectElement;
+  assert.equal(mode.value, 'idealized');
+  const full = mode.querySelector('option[value="full"]') as HTMLOptionElement;
+  assert.equal(full.disabled, true);
+  root.unmount();
+}));
+
+test('a failed curve delete keeps the stored curve and shows the error', async () => withDom(async () => {
+  const rootElement = installDom();
+  const { createRoot } = await import('react-dom/client');
+  const { act } = await import('react');
+  const root = createRoot(rootElement);
+  let calls = 0;
+  await act(async () => {
+    root.render(createElement(StressStrainSection, {
+      material: storedMaterial,
+      units,
+      editable: true,
+      onSave: () => null,
+      onDelete: () => {
+        calls += 1;
+        return 'Supabase 移除曲線失敗：42501';
+      },
+    }));
+  });
+  await act(async () => { button(rootElement, '刪除完整曲線')!.click(); });
+  await act(async () => { button(rootElement.querySelector('[role="alertdialog"]')!, '刪除完整曲線')!.click(); });
+  await flush();
+  assert.equal(calls, 1);
+  assert.match(rootElement.textContent ?? '', /Supabase 移除曲線失敗：42501/);
+  assert.match(rootElement.textContent ?? '', /匯出曲線 CSV/);
+  assert.match(rootElement.textContent ?? '', /編輯完整曲線/);
+  const mode = rootElement.querySelector('select') as HTMLSelectElement;
+  assert.equal(mode.value, 'full');
+  assert.ok(rootElement.querySelector('[role="alertdialog"]'));
+  await act(async () => { button(rootElement.querySelector('[role="alertdialog"]')!, '刪除完整曲線')!.click(); });
+  await flush();
+  assert.equal(calls, 2);
+  root.unmount();
 }));
