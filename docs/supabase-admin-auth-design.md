@@ -1,20 +1,26 @@
 # Supabase admin authorization foundation
 
-Step 4A prepares the identity model that later material write policies will use. It does not sign anyone in, and it does not allow anyone to write the catalog.
+Step 4A prepares the identity model that later material write policies use. The sections below keep that staged design. The current application also signs in, checks admin status, and lets a confirmed Admin add, edit, and delete material rows.
+
+## Current state
+
+The browser client is created with the publishable frontend key. There is one Supabase client and one auth watcher. The user signs in with an existing Supabase Auth identity. Admin membership is a row in `private.material_library_admins`, keyed by that user's UUID. The browser does not read the registry. It calls `material_library.is_current_user_material_admin()`, which returns one boolean and no admin rows.
+
+The UI enables material Add, Edit, and Delete only when that check returns admin. Signed out, checking, non-admin, and error stay closed. A stale Admin badge does not authorize a write: Row Level Security on `material_library.materials` remains the boundary. Curve editing, CSV import, JSON recovery/import, and category or source index changes are not part of this write scope.
 
 `supabase/migrations/004_material_library_admin_foundation.sql` is a review artifact. This step does not execute it.
 
-## Current catalog access
+## Catalog access at the end of Step 4A
 
-Migration `003_material_library_public_read.sql` is unchanged.
+Migration `003_material_library_public_read.sql` was unchanged by Step 4A.
 
-`anon` and `authenticated` may `SELECT` from:
+At that point, `anon` and `authenticated` could `SELECT` from:
 
 - `material_library.categories`
 - `material_library.sources`
 - `material_library.materials`
 
-Those grants are `SELECT` only. The policies are `FOR SELECT` with `USING (true)`. There is no `INSERT`, `UPDATE`, or `DELETE` grant or policy on those tables.
+Those Step 3 grants are `SELECT` only. The policies are `FOR SELECT` with `USING (true)`. Step 4A added no `INSERT`, `UPDATE`, or `DELETE` grant or policy. Step 4C later added material write policies for a confirmed admin. Categories and sources are still select-only.
 
 ## What Step 4A adds
 
@@ -58,7 +64,7 @@ SELECT EXISTS (
 
 ## Access after Step 4A
 
-Writes are still closed for every caller, including a future admin.
+Step 4A left writes closed for every caller, including a future admin. This table describes that step, not the current material policies.
 
 | Caller | SELECT catalog | INSERT | UPDATE | DELETE |
 | --- | --- | --- | --- | --- |
@@ -66,22 +72,22 @@ Writes are still closed for every caller, including a future admin.
 | authenticated non-admin | yes | no | no | no |
 | authenticated admin | yes | no | no | no |
 
-## Later steps, not this one
+## What later steps added
 
-A person will sign in through Supabase Auth. After that user exists, a separate reviewed step can insert that user's UUID into `private.material_library_admins`.
+Step 4A itself inserts no admin row and hard-codes no email or UUID. A later reviewed step registered one existing Auth user in `private.material_library_admins`. This repository still stores neither that email nor that UUID.
 
-Future material write policies, still not created here, will authorize with:
+Step 4C added material write policies that authorize with:
 
 ```sql
 (SELECT private.is_material_admin())
 ```
 
-The intended later matrix is:
+The current material matrix is:
 
-| Caller | SELECT | INSERT | UPDATE | DELETE |
+| Caller | SELECT | Material INSERT | Material UPDATE | Material DELETE |
 | --- | --- | --- | --- | --- |
 | `anon` | yes | no | no | no |
-| authenticated non-admin | yes | no | no | no |
-| authenticated admin | yes | future yes | future yes | future yes |
+| authenticated non-admin | yes | denied by RLS | denied by RLS | denied by RLS |
+| authenticated material admin | yes | yes | yes | yes |
 
-Those future write permissions are not grants and not policies in Step 4A. The application has no login, signup, or catalog editor for Supabase in this step. The frontend does not decide who is an admin.
+Those grants and policies are in `005_material_admin_write_policies.sql`, not in Step 4A. They cover `material_library.materials` only. Categories, sources, curves, CSV, and JSON import have no write grant here. The frontend Admin status chooses which buttons to show. It does not decide who is an admin.

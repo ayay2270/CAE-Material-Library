@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 /** One client per module. A second createClient() would construct another GoTrueClient. */
 let materialLibraryClient: SupabaseClient<any, 'material_library'> | null = null;
 
-/** Browser client for the read-only material_library schema. No auth configuration. */
+/** Shared browser client for material_library schema access, the Supabase Auth session, and the Admin capability flow. */
 export function createMaterialLibraryClient(): SupabaseClient<any, 'material_library'> {
   if (materialLibraryClient) return materialLibraryClient;
   const url = import.meta.env?.VITE_SUPABASE_URL?.trim();

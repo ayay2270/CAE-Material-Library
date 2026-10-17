@@ -1,15 +1,12 @@
-# CAE Material Library — WIP Preview (temporary)
+# CAE Material Library
 
-> **This is a temporary preview repository for UI / behavior review. It is NOT the production repository.**
-> Do not use it as the production material database.
+Repository: https://github.com/ayay2270/CAE-Material-Library
 
-| | |
-|---|---|
-| **Preview site** | https://ayay2270.github.io/CAE-Material-Library-V2-WIP-Preview/ |
-| **Production site** | https://ayay2270.github.io/CAE-Material-Library-V2-Preview/ (unchanged) |
-| **Source of the work** | [`ayay2270/CAE-Material-Library-V2-Preview`](https://github.com/ayay2270/CAE-Material-Library-V2-Preview), branch [`wip/solver-bridge-calculated-h`](https://github.com/ayay2270/CAE-Material-Library-V2-Preview/tree/wip/solver-bridge-calculated-h) |
+Current development branch: `wip/supabase-admin-auth-step4`
 
-Production remains unchanged: nothing here has been merged into the production `main` branch or its GitHub Pages site.
+Prepared GitHub Pages URL: https://ayay2270.github.io/CAE-Material-Library/
+
+Supabase-backed Material Library is prepared on this branch. A confirmed Admin can Add, Edit, and Delete materials, and that path was live-verified. The GitHub Pages workflow is prepared to build Supabase mode. `main` has not been merged or deployed yet, so the production Supabase cutover is not complete.
 
 ## What is being previewed
 
@@ -30,7 +27,6 @@ CSV export still writes the **legacy stored H** value, while the UI displays the
 |---|---|---|
 | Al7050 | 1196.42 MPa | 1205.42 MPa |
 
-## Notes for reviewers
+## Notes
 
-- The database sync-status check may still refer to the production repository. That part of the app is read-only and unchanged in this preview.
-- This repository and its preview site can be deleted after review without affecting production.
+Curve editing, CSV import, JSON recovery/import, and category or source management stay read-only in Supabase mode. Legacy mode remains available when Supabase mode is off.

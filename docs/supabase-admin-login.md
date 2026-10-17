@@ -1,6 +1,6 @@
 # Supabase admin login
 
-Step 4D-1 adds Material Library sign-in and an admin-status display. It does not open material editing.
+Step 4D-1 adds Material Library sign-in and an admin-status display. Login authenticates the Supabase Auth user and then checks Material Library Admin status. It does not by itself grant Admin. A confirmed Admin can Add, Edit, and Delete materials. Those successful writes go directly to Supabase and do not ask for Save Database. A non-admin stays read-only for material CRUD. Curve editing, CSV import, JSON recovery/import, and category or source management stay read-only for every account.
 
 `supabase/migrations/006_material_admin_status_rpc.sql` is a review artifact. This step does not execute it.
 
@@ -28,7 +28,7 @@ The function has no arguments, returns boolean, and runs as `SECURITY INVOKER` w
 
 Row Level Security on `material_library.materials` remains the write authorization. An admin session does not bypass it, and a frontend flag cannot satisfy it.
 
-The header status is display only:
+The header reports the auth snapshot. Material Add, Edit, and Delete follow the confirmed Admin state. Row Level Security still accepts or rejects the write.
 
 | UI state | Meaning |
 | --- | --- |
@@ -40,11 +40,11 @@ The header status is display only:
 
 Failure never promotes the user to admin.
 
-## Still read-only
+## What login enables now
 
-Supabase mode keeps `editable = false`. Add, Edit, Delete, import, index editing, and curve saving stay inactive. The client sends Auth requests and the boolean RPC only. It does not insert, update, delete, or upsert material rows.
+Supabase mode still keeps the legacy `editable` flag false, so Save Database, curve editing, CSV import, JSON recovery, and category or source index editing stay inactive. Material Add, Edit, and Delete use a separate Admin capability. The client sends Auth requests, the boolean RPC, and, for a confirmed Admin, one material insert, update, or delete. It does not upsert, and it does not write categories or sources.
 
-This phase has email/password sign-in, session restore, and sign-out. It has no signup, password reset, magic link, or OAuth.
+Sign-in is email and password, with session restore and sign-out. There is no signup, password reset, magic link, or OAuth. This document stores no admin email, user id, password, or token.
 
 ## 006 review
 
@@ -54,4 +54,4 @@ This phase has email/password sign-in, session restore, and sign-out. It has no 
 - The return value is one boolean.
 - `anon` cannot execute it. `authenticated` can.
 - `private` is not added to exposed schemas.
-- Table grants and material policies are unchanged.
+- This migration does not change table grants or the material write policies added in Step 4C.

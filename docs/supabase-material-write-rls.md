@@ -1,6 +1,6 @@
 # Supabase material write authorization
 
-Step 4C allows a Material Library admin to insert, update, and delete rows in `material_library.materials`. Everyone else stays read-only.
+Step 4C allows a Material Library admin to insert, update, and delete rows in `material_library.materials`. Everyone else stays read-only for those writes. Categories and sources have no write capability. The application now calls these policies for material Add, Edit, and Delete only. Curve editing, CSV import, JSON recovery, and category or source management are not enabled by this migration.
 
 `supabase/migrations/005_material_admin_write_policies.sql` is a review artifact. This step does not execute it.
 

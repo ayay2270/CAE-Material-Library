@@ -36,4 +36,17 @@ Source is restricted to the existing source index while adding or editing a Supa
 
 ## Live validation
 
-Controlled live INSERT, UPDATE, and DELETE against the real database has not been executed. Step 4E-2C will perform that verification.
+Step 4E-2C was manually verified against the live Supabase project. No credential, token, or admin identity is recorded here.
+
+The baseline catalog had 11 materials. The controlled row was `ZZZ_STEP4E2C_TEST`.
+
+Observed sequence:
+
+- INSERT raised the count from 11 to 12, and the row was still there after reload.
+- UPDATE changed only Notes. The count stayed 12. The new notes and history were still there after reload.
+- DELETE returned the count from 12 to 11. Reload confirmed the test row was absent.
+- The original 11 materials remained.
+
+## Pages status
+
+The GitHub Pages workflow on this branch is prepared to build Supabase mode from Actions variables. Production merge and deployment have not happened. `main` is still the previous legacy Pages build. See `docs/supabase-readonly-integration.md`.
