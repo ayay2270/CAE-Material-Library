@@ -6,8 +6,8 @@ import { downloadDeployedDatabase } from '../lib/deployedDatabaseDownload';
 import { DatabaseOnboardingDialog } from './DatabaseOnboardingDialog';
 import { EXAMPLE_QUERY } from '../lib/orthotropicExample';
 import { SupabaseAuthDialog } from './SupabaseAuthDialog';
-import { startMaterialLibraryAuth } from '../lib/supabaseAuth';
-import type { MaterialAuthHandle, MaterialAuthSnapshot } from '../lib/supabaseAuth';
+import type { MaterialAuthSnapshot } from '../lib/supabaseAuth';
+import type { MaterialLibraryAuthController } from '../lib/useMaterialAuth';
 
 type State = ReturnType<typeof useMaterials>;
 const clock = (value: number | null) => value === null ? '' : new Date(value).toLocaleTimeString('zh-TW', { hour12: false });
@@ -16,11 +16,9 @@ const clock = (value: number | null) => value === null ? '' : new Date(value).to
 const supabaseAuthEnabled = import.meta.env
   ? import.meta.env.VITE_MATERIAL_DATA_SOURCE === 'supabase'
   : false;
-const supabaseAuthUi = supabaseAuthEnabled
-  ? { startMaterialLibraryAuth, SupabaseAuthDialog }
-  : null;
+const AuthDialog = supabaseAuthEnabled ? SupabaseAuthDialog : null;
 const ADMIN_STATUS_UNCONFIRMED = '無法確認 Admin 身分，目前維持唯讀。';
-export function DatabaseStatus({ state }: { state: State }) {
+export function DatabaseStatus({ state, auth = null }: { state: State; auth?: MaterialLibraryAuthController | null }) {
   const { fileStatus, fileSupported, developerMode, fileError, fileName, editable, dirty, saving, saveError,
     connectFile, reloadFile, disconnectFile, lastReadAt, lastSavedAt, backupText, github, saveDatabase } = state;
   const linked = fileStatus === 'linked';
@@ -40,7 +38,7 @@ export function DatabaseStatus({ state }: { state: State }) {
     <span role="status">獨立範例 · {saveError ? '儲存失敗' : dirty ? '有未儲存變更' : lastSavedAt ? '已儲存在此分頁' : '僅此分頁'}</span>
     <button className="btn" disabled={!dirty || saving} onClick={() => void saveDatabase()}>儲存範例</button>
   </div>;
-  if (state.dataSource === 'supabase') return <SupabaseDatabaseStatus state={state} />;
+  if (state.dataSource === 'supabase') return <SupabaseDatabaseStatus state={state} auth={auth} />;
   return <><div className="database-status">
     <details className="database-status-menu" ref={menu} open={showOnboarding}>
       <summary>資料庫狀態 · {saving ? '儲存並驗證中' : saveError ? '儲存失敗' : dirty ? '有未儲存變更' : lastSavedAt ? '儲存成功' : label}</summary>
@@ -91,47 +89,37 @@ function supabaseSourceLabel(state: State): string {
   return '資料來源 · Supabase（讀取中）';
 }
 
-function SupabaseDatabaseStatus({ state }: { state: State }) {
+function SupabaseDatabaseStatus({ state, auth }: { state: State; auth: MaterialLibraryAuthController | null }) {
   const label = supabaseSourceLabel(state);
   const readError = state.supabaseStatus === 'error' && state.supabaseError
     ? <span role="alert">{state.supabaseError}</span>
     : null;
-  if (!supabaseAuthUi) {
+  if (!AuthDialog || !auth) {
     return <div className="database-status">
       <span role="status">{label}</span>
       {readError}
     </div>;
   }
-  return <SupabaseAuthStatus label={label} readError={readError} />;
+  return <SupabaseAuthStatus label={label} readError={readError} auth={auth} />;
 }
 
-function SupabaseAuthStatus({ label, readError }: { label: string; readError: ReactNode }) {
+function SupabaseAuthStatus({
+  label,
+  readError,
+  auth,
+}: {
+  label: string;
+  readError: ReactNode;
+  auth: MaterialLibraryAuthController;
+}) {
   const [loginOpen, setLoginOpen] = useState(false);
-  const [snapshot, setSnapshot] = useState<MaterialAuthSnapshot>({ status: 'checking', email: null, message: null });
-  const authRef = useRef<MaterialAuthHandle | null>(null);
-  useEffect(() => {
-    const ui = supabaseAuthUi;
-    if (!ui) return;
-    try {
-      const handle = ui.startMaterialLibraryAuth(setSnapshot);
-      authRef.current = handle;
-      return () => {
-        authRef.current = null;
-        handle.stop();
-      };
-    } catch {
-      setSnapshot({ status: 'error', email: null, message: ADMIN_STATUS_UNCONFIRMED });
-    }
-  }, []);
-  const Dialog = supabaseAuthUi?.SupabaseAuthDialog;
-  const signOut = () => { void authRef.current?.signOut(); };
+  const Dialog = AuthDialog;
+  const signOut = () => { auth.signOut(); };
   return <div className="database-status">
     <span role="status">{label}</span>
     {readError}
-    <SupabaseAuthControls snapshot={snapshot} onLogin={() => setLoginOpen(true)} onSignOut={signOut} />
-    {loginOpen && Dialog ? <Dialog onClose={() => setLoginOpen(false)} onSignIn={(email, password) => (
-      authRef.current?.signIn(email, password) ?? Promise.resolve({ error: ADMIN_STATUS_UNCONFIRMED })
-    )} /> : null}
+    <SupabaseAuthControls snapshot={auth.snapshot} onLogin={() => setLoginOpen(true)} onSignOut={signOut} />
+    {loginOpen && Dialog ? <Dialog onClose={() => setLoginOpen(false)} onSignIn={(email, password) => auth.signIn(email, password)} /> : null}
   </div>;
 }
 

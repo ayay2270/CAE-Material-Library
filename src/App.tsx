@@ -4,6 +4,7 @@ import { useMaterials } from './lib/storage';
 import { EXAMPLE_ID } from './lib/orthotropicExample';
 import { DatabaseStatus } from './components/DatabaseStatus';
 import { LOCAL_EDITING_HINT, SUPABASE_WRITE_LATER, requestMaterialMutation } from './lib/localEditing';
+import { isSupabaseAdminCapability, useMaterialLibraryAuth } from './lib/useMaterialAuth';
 import { LocalEditingDialog } from './components/LocalEditingDialog';
 import { Modal } from './components/Modal';
 import { LegacyRecovery } from './components/LegacyRecovery';
@@ -39,6 +40,8 @@ type Dialog = 'help' | 'io' | 'mapInfo' | 'localEditing' | 'supabaseReadOnly' | 
 
 export function App() {
   const materialState = useMaterials();
+  const auth = useMaterialLibraryAuth(materialState.dataSource === 'supabase');
+  const supabaseAdmin = isSupabaseAdminCapability(materialState.dataSource, auth.snapshot.status);
   const { materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
     editable, saveError, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database } = materialState;
 
@@ -150,6 +153,8 @@ export function App() {
   const showLocalEditing = () => setDialog('localEditing');
   const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
   const readOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_WRITE_LATER : LOCAL_EDITING_HINT;
+  // Admin capability is for a later step. It does not open the mutation gate.
+  void supabaseAdmin;
   const requestEdit = (action: () => void) => requestMaterialMutation(
     materialState.dataSource, editable, action, showLocalEditing, showSupabaseReadOnly,
   );
@@ -160,7 +165,7 @@ export function App() {
       <Header
         editable={editable}
         readOnlyTitle={readOnlyTitle}
-        databaseStatus={<DatabaseStatus state={materialState} />}
+        databaseStatus={<DatabaseStatus state={materialState} auth={auth} />}
         onHelp={() => setDialog('help')}
         onAdd={() => requestEdit(() => setEditing('new'))}
       />
