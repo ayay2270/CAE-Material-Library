@@ -36,6 +36,30 @@ export function materialCrudEnabledFor(
   return dataSource === 'supabase' ? supabaseAdmin : legacyEditable;
 }
 
+/**
+ * Curve writes stay closed in the UI.
+ * Legacy/example follows storage `editable`. Supabase follows confirmed Admin only.
+ */
+export function curveWriteEnabledFor(
+  dataSource: 'supabase' | 'legacy',
+  legacyEditable: boolean,
+  supabaseAdmin: boolean,
+): boolean {
+  return dataSource === 'supabase' ? supabaseAdmin : legacyEditable;
+}
+
+/**
+ * Category and source management stay closed in the UI.
+ * Legacy/example follows storage `editable`. Supabase follows confirmed Admin only.
+ */
+export function indexWriteEnabledFor(
+  dataSource: 'supabase' | 'legacy',
+  legacyEditable: boolean,
+  supabaseAdmin: boolean,
+): boolean {
+  return dataSource === 'supabase' ? supabaseAdmin : legacyEditable;
+}
+
 /** Add, edit, and delete. This gate does not open index, curve, CSV, or Save Database. */
 export function requestMaterialCrud(
   materialCrudEnabled: boolean,
