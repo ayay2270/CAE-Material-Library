@@ -13,7 +13,7 @@ Everyone can read the catalog.
 A confirmed Material Library Admin can:
 
 - Add, edit, and delete a material
-- Update a stress-strain curve
+- Add, edit, or delete a stored full stress-strain curve. Deleting that curve does not delete the material.
 - Add a category, or rename its display label
 - Add a source, or rename it
 

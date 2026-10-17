@@ -62,7 +62,7 @@ export function App() {
   const materialState = useMaterials();
   const auth = useMaterialLibraryAuth(materialState.dataSource === 'supabase');
   const supabaseAdmin = isSupabaseAdminCapability(materialState.dataSource, auth.snapshot.status);
-  const { materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
+  const { materials, add, update, remove, importMany, discardDraft, setCurve, clearCurve, indexes, editIndex,
     editable, saveError, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database } = materialState;
 
   const [indexManager, setIndexManager] = useState<IndexKind | null>(null);
@@ -390,6 +390,21 @@ export function App() {
             }
             const error = setCurve(detail.id, data);
             if (!error) setNotice(`已更新 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
+            return error;
+          }}
+          onDeleteCurve={async () => {
+            if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
+              if (!('extendedMutations' in materialState) || !materialState.extendedMutations) return 'Supabase 曲線寫入未啟用。';
+              try {
+                await materialState.extendedMutations.clearCurve(detail.id);
+                setNotice(`已刪除 Supabase 材料完整曲線：${detail.name}。`);
+                return null;
+              } catch (error) {
+                return error instanceof Error && error.message ? error.message : '曲線刪除失敗。';
+              }
+            }
+            const error = clearCurve(detail.id);
+            if (!error) setNotice(`已移除 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
             return error;
           }}
         />

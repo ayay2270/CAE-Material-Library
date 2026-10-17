@@ -12,7 +12,7 @@ When `VITE_MATERIAL_DATA_SOURCE=supabase` and example mode is off:
 
 - Everyone can `SELECT` the catalog.
 - A confirmed Material Library Admin can Add, Edit, and Delete material records. Material writes use the table grants and Row Level Security from migration 005. The Admin badge does not bypass that boundary.
-- A confirmed Admin can update a stress-strain curve, add a category, rename a category label, add a source, and rename a source. Those five writes are direct: they do not create a local draft and they do not use Save Database.
+- A confirmed Admin can add, edit, or delete a stored full stress-strain curve, add a category, rename a category label, add a source, and rename a source. Curve delete is `material_library.clear_material_curve` in migration 008. It removes only the stored curve; the material row and its other properties stay. Those writes are direct: they do not create a local draft and they do not use Save Database. Migration 008 is a review artifact and is not executed here.
 - Category and source table privileges for frontend roles remain `SELECT` only. Their writes go through the narrow `SECURITY DEFINER` RPCs in migration 007. There is no generic `INSERT`, `UPDATE`, or `DELETE` grant on those tables.
 - Still unavailable: category delete, source delete, CSV import/write, JSON import/recovery write, Save Database, and the legacy GitHub material write.
 - The generic legacy `editable` flag stays false in Supabase mode, so those deferred controls stay closed.

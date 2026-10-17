@@ -17,6 +17,7 @@ import {
   addSupabaseCategory,
   addSupabaseSource,
   renameSupabaseCategoryLabel,
+  clearSupabaseMaterialCurve,
   renameSupabaseSource,
   updateSupabaseMaterialCurve,
 } from './supabaseExtendedWrites';
@@ -24,6 +25,7 @@ import {
   commitSupabaseCategoryAdd,
   commitSupabaseCategoryRename,
   commitSupabaseCurve,
+  commitSupabaseCurveClear,
   commitSupabaseSourceAdd,
   commitSupabaseSourceRename,
 } from './supabaseExtendedCommit';
@@ -49,6 +51,7 @@ const supabaseMaterialWriters = supabaseReadOnly
 const supabaseExtendedWriters = supabaseReadOnly
   ? {
       updateSupabaseMaterialCurve,
+      clearSupabaseMaterialCurve,
       addSupabaseCategory,
       renameSupabaseCategoryLabel,
       addSupabaseSource,
@@ -56,6 +59,30 @@ const supabaseExtendedWriters = supabaseReadOnly
       readSupabaseDatabase,
     }
   : null;
+
+export const STORED_CURVE_CLEARED_SUMMARY = 'Stress–strain curve：已移除完整曲線';
+
+/** Remove only a stored full curve. Other material fields stay on the returned copy. */
+export function clearStoredCurveDraft(
+  materials: Material[],
+  id: string,
+  editable: boolean,
+  now: string,
+): { materials: Material[]; error: string | null } {
+  if (!editable) return { materials, error: '目前為唯讀模式，請在本機編輯資料庫。' };
+  const existing = materials.find(material => material.id === id);
+  if (!existing) return { materials, error: '材料已不存在，未儲存。' };
+  if (!isStressStrainData(existing.stressStrainCurve)) return { materials, error: '目前沒有已儲存的完整曲線，未刪除。' };
+  return {
+    error: null,
+    materials: materials.map(material => material.id !== id ? material : {
+      ...material,
+      stressStrainCurve: null,
+      updatedAt: now,
+      history: [{ at: now, action: 'edited' as const, summary: STORED_CURVE_CLEARED_SUMMARY }, ...material.history],
+    }),
+  };
+}
 
 export function newMaterialId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -316,6 +343,12 @@ export function useMaterials() {
     }));
     return null;
   };
+  const clearCurve = (id: string): string | null => {
+    const result = clearStoredCurveDraft(latest.current.materials, id, editable, new Date().toISOString());
+    if (result.error) return result.error;
+    setMaterials(result.materials);
+    return null;
+  };
   /** Original CSV name matching, history behavior and absent-curve preservation. */
   const importMany = (rows: MaterialInput[]) => {
     assertEditor();
@@ -408,6 +441,13 @@ export function useMaterials() {
         (materialId, next) => supabaseExtendedWriters.updateSupabaseMaterialCurve(materialId, next),
       ));
     },
+    clearCurve(id: string) {
+      return runSupabaseMutation(database => commitSupabaseCurveClear(
+        database,
+        id,
+        materialId => supabaseExtendedWriters.clearSupabaseMaterialCurve(materialId),
+      ));
+    },
     addCategory(name: string) {
       return runSupabaseMutation(database => commitSupabaseCategoryAdd(
         database,
@@ -440,7 +480,7 @@ export function useMaterials() {
       ));
     },
   } : null;
-  const state = { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
+  const state = { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, clearCurve, indexes, editIndex,
     materialWriting,
     editable, dirty, ready, saving, saveError, saveDatabase, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database: draft,
     fileSupported, fileStatus, fileError, fileName: fileSession.current?.handle.name ?? pendingHandle.current?.name ?? null, connectFile, reloadFile, disconnectFile,

@@ -1,6 +1,6 @@
 # Supabase admin login
 
-Step 4D-1 adds Material Library sign-in and an admin-status display. Login authenticates the Supabase Auth user and then checks Material Library Admin status. It does not by itself grant Admin. A confirmed Admin can add, edit, and delete materials, update a stress-strain curve, add or rename a category, and add or rename a source. Those successful writes go directly to Supabase and do not ask for Save Database. A non-admin stays closed for every one of those writes. Category delete, source delete, CSV import/write, JSON import/recovery write, and Save Database stay unavailable for every account.
+Step 4D-1 adds Material Library sign-in and an admin-status display. Login authenticates the Supabase Auth user and then checks Material Library Admin status. It does not by itself grant Admin. A confirmed Admin can add, edit, and delete materials, add, edit, or delete a stored full stress-strain curve, add or rename a category, and add or rename a source. Deleting a stored curve does not delete the material. Those successful writes go directly to Supabase and do not ask for Save Database. A non-admin stays closed for every one of those writes. Category delete, source delete, CSV import/write, JSON import/recovery write, and Save Database stay unavailable for every account.
 
 `supabase/migrations/006_material_admin_status_rpc.sql` is a review artifact. This step does not execute it.
 

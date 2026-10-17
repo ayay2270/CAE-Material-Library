@@ -10,15 +10,16 @@ The UI enables a write only for a confirmed Admin. Signed out, checking, non-adm
 
 Material Add, Edit, and Delete use the normal `material_library.materials` grants and Row Level Security from migration 005. The Admin predicate remains that boundary.
 
-Curve update, category add, category label rename, source add, and source rename use the narrow `SECURITY DEFINER` RPCs from migration 007:
+Curve add/edit, stored-curve delete, category add, category label rename, source add, and source rename use the narrow `SECURITY DEFINER` RPCs from migrations 007 and 008:
 
 - `material_library.update_material_curve`
+- `material_library.clear_material_curve`
 - `material_library.add_material_category`
 - `material_library.rename_material_category_label`
 - `material_library.add_material_source`
 - `material_library.rename_material_source`
 
-Every one of those functions calls `private.is_material_admin()`. `EXECUTE` is granted to `authenticated` only. `anon` and `PUBLIC` do not receive it. Category and source tables do not receive generic browser `INSERT`, `UPDATE`, or `DELETE`.
+`clear_material_curve` removes only `stress_strain_curve` on one material. It does not delete the material. Every one of those functions calls `private.is_material_admin()`. `EXECUTE` is granted to `authenticated` only. `anon` and `PUBLIC` do not receive it. Category and source tables do not receive generic browser `INSERT`, `UPDATE`, or `DELETE`. Migration 008 is a review artifact and is not executed here.
 
 Still unavailable: category delete, source delete, CSV import/write, JSON import/recovery write, Save Database, and the legacy GitHub material write. The generic legacy `editable` flag stays false in Supabase mode.
 

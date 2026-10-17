@@ -13,7 +13,7 @@ import {
 import { helpModeCopy } from '../src/components/Dialogs';
 
 const readyLabel = '資料來源 · Supabase';
-const loginCopy = '登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料，更新材料曲線，以及新增或重新命名分類與來源。CSV 匯入、JSON 寫入、分類刪除與來源刪除目前仍不可用。';
+const loginCopy = '登入後若具備 Material Library Admin 權限，可新增、編輯與刪除材料，新增、編輯或刪除已儲存的完整曲線，以及新增或重新命名分類與來源。刪除已儲存的完整曲線不會刪除材料。CSV 匯入、JSON 寫入、分類刪除與來源刪除目前仍不可用。';
 const deferredCopy = '此功能在 Supabase 模式目前為唯讀，尚未開放寫入。';
 
 test('Supabase source label, login copy, and deferred copy are feature-scoped', async () => {
@@ -59,7 +59,8 @@ test('help copy follows the data source and leaves legacy local editing intact',
   assert.equal(supabase.includes('src/data/materials.json'), false);
   assert.equal(supabase.includes('直接寫入 Supabase'), true);
   assert.equal(supabase.includes('不需要按 Save Database'), true);
-  assert.equal(supabase.includes('更新材料曲線'), true);
+  assert.equal(supabase.includes('新增、編輯或刪除已儲存的完整曲線'), true);
+  assert.equal(supabase.includes('刪除已儲存的完整曲線不會刪除材料'), true);
   assert.equal(supabase.includes('新增或重新命名分類與來源'), true);
   assert.equal(supabase.includes('CSV／JSON 寫入、分類刪除與來源刪除目前仍不可用'), true);
   assert.equal(supabase.includes('分類與來源管理目前仍為唯讀'), false);
