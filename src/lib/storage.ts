@@ -14,6 +14,20 @@ import { isOrthotropicExample, readOrthotropicExample, saveOrthotropicExample } 
 import { readSupabaseDatabase } from './supabaseDatabase';
 import { deleteSupabaseMaterial, insertSupabaseMaterial, updateSupabaseMaterial } from './supabaseMaterialWrites';
 import {
+  addSupabaseCategory,
+  addSupabaseSource,
+  renameSupabaseCategoryLabel,
+  renameSupabaseSource,
+  updateSupabaseMaterialCurve,
+} from './supabaseExtendedWrites';
+import {
+  commitSupabaseCategoryAdd,
+  commitSupabaseCategoryRename,
+  commitSupabaseCurve,
+  commitSupabaseSourceAdd,
+  commitSupabaseSourceRename,
+} from './supabaseExtendedCommit';
+import {
   SUPABASE_SOURCE_DISABLED,
   commitSupabaseDelete,
   commitSupabaseInsert,
@@ -31,6 +45,16 @@ const supabaseReadOnly = import.meta.env
 const readSupabaseWhenEnabled = supabaseReadOnly ? readSupabaseDatabase : null;
 const supabaseMaterialWriters = supabaseReadOnly
   ? { insertSupabaseMaterial, updateSupabaseMaterial, deleteSupabaseMaterial }
+  : null;
+const supabaseExtendedWriters = supabaseReadOnly
+  ? {
+      updateSupabaseMaterialCurve,
+      addSupabaseCategory,
+      renameSupabaseCategoryLabel,
+      addSupabaseSource,
+      renameSupabaseSource,
+      readSupabaseDatabase,
+    }
   : null;
 
 export function newMaterialId(): string {
@@ -113,7 +137,8 @@ export function useMaterials() {
     setDraft(latest.current);
   };
   useEffect(() => {
-    // Example mode and Supabase read-only mode skip the dev writer, remembered files, and legacy recovery.
+    // Example mode and Supabase mode skip the dev writer, remembered files, and legacy recovery.
+    // Catalog reads stay public. Confirmed Admin writes use their own capabilities. Generic editable stays false.
     if (exampleMode || supabaseActive) return;
     let cancelled = false;
     const version = fileGeneration.current;
@@ -373,6 +398,48 @@ export function useMaterials() {
       ));
     },
   } : null;
+  // Curve and index Admin writes share the same lock and pending flag as material CRUD.
+  const extendedMutations = supabaseExtendedWriters ? {
+    saveCurve(id: string, curve: StressStrainData) {
+      return runSupabaseMutation(database => commitSupabaseCurve(
+        database,
+        id,
+        curve,
+        (materialId, next) => supabaseExtendedWriters.updateSupabaseMaterialCurve(materialId, next),
+      ));
+    },
+    addCategory(name: string) {
+      return runSupabaseMutation(database => commitSupabaseCategoryAdd(
+        database,
+        name,
+        category => supabaseExtendedWriters.addSupabaseCategory(category),
+      ));
+    },
+    renameCategory(id: string, label: string) {
+      return runSupabaseMutation(database => commitSupabaseCategoryRename(
+        database,
+        id,
+        label,
+        (categoryId, next) => supabaseExtendedWriters.renameSupabaseCategoryLabel(categoryId, next),
+      ));
+    },
+    addSource(name: string) {
+      return runSupabaseMutation(database => commitSupabaseSourceAdd(
+        database,
+        name,
+        source => supabaseExtendedWriters.addSupabaseSource(source),
+      ));
+    },
+    renameSource(oldName: string, newName: string) {
+      return runSupabaseMutation(database => commitSupabaseSourceRename(
+        database,
+        oldName,
+        newName,
+        (previous, next) => supabaseExtendedWriters.renameSupabaseSource(previous, next),
+        () => supabaseExtendedWriters.readSupabaseDatabase(),
+      ));
+    },
+  } : null;
   const state = { materials: draft.materials, add, update, remove, importMany, discardDraft, setCurve, indexes, editIndex,
     materialWriting,
     editable, dirty, ready, saving, saveError, saveDatabase, legacy, dismissLegacy, importLegacy, showLegacy, importDatabase, database: draft,
@@ -382,5 +449,5 @@ export function useMaterials() {
     supabaseStatus: supabaseActive ? supabaseStatus : 'idle' as const,
     supabaseError: supabaseActive ? supabaseError : null };
   // The mutation object is absent from a legacy build, so its name is not shipped there.
-  return supabaseReadOnly ? { ...state, materialMutations } : state;
+  return supabaseReadOnly ? { ...state, materialMutations, extendedMutations } : state;
 }

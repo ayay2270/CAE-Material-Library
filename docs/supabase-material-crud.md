@@ -20,7 +20,7 @@ Each call writes one material. The app generates the material id and `updatedAt`
 
 The local material list changes only after the adapter returns the written row or the deleted id. Insert and update keep the returned material. A failed write leaves the list as it was, and the form or delete dialog stays open with the error.
 
-There is no upsert. An update that does not find the id does not insert a row. Category and source tables are not written. CSV import and bulk changes are deferred.
+There is no upsert. An update that does not find the id does not insert a row. This material adapter does not write category or source tables. CSV import and bulk changes stay deferred.
 
 ## Returned rows
 
@@ -30,7 +30,7 @@ A Supabase error becomes a Traditional Chinese application error. Zero returned 
 
 ## Still deferred
 
-A Supabase Admin still cannot edit a stress-strain curve, edit category or source indexes, import CSV, recover or import JSON, or use Save Database. Those controls stay on the storage `editable` flag, which is false in Supabase mode. There is no adapter for category or source writes.
+Material Add, Edit, and Delete in this adapter are unchanged. A confirmed Admin can also update a curve and add or rename a category or source through the extended-write RPCs. Those calls are direct and do not use Save Database. Category delete, source delete, CSV import/write, JSON import/recovery write, and Save Database remain unavailable. `editable` stays false in Supabase mode and still closes those deferred controls. This material adapter still does not write category or source tables.
 
 Source is restricted to the existing source index while adding or editing a Supabase material. The form does not accept an arbitrary new source, and the write is refused before the adapter runs. Legacy and example mode still allow free-text Source.
 
@@ -49,4 +49,4 @@ Observed sequence:
 
 ## Pages status
 
-The GitHub Pages workflow on this branch is prepared to build Supabase mode from Actions variables. Production merge and deployment have not happened. `main` is still the previous legacy Pages build. See `docs/supabase-readonly-integration.md`.
+Production on `main` already uses Supabase as the catalog source. This Step 5 branch is not merged or deployed. See `docs/supabase-readonly-integration.md`.

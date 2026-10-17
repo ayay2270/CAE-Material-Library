@@ -32,9 +32,39 @@ test('production has browser-selected file access but no server filesystem endpo
     assert.ok(js.includes('material_library'), 'supabase production includes the material_library reader');
     assert.ok(js.includes('資料來源 · Supabase'), 'supabase production includes the source status');
     assert.equal(js.includes('資料來源 · Supabase（唯讀）'), false, 'supabase production no longer calls the whole source read-only');
+    for (const token of [
+      'update_material_curve',
+      'add_material_category',
+      'rename_material_category_label',
+      'add_material_source',
+      'rename_material_source',
+    ]) {
+      assert.ok(js.includes(token), `supabase production includes ${token}`);
+    }
   } else {
     assert.equal(js.includes('material_library'), false, 'legacy production must omit the Supabase reader');
     assert.equal(/Authorization|Bearer |github_pat_|ghp_/.test(js), false, 'no GitHub credentials');
+    for (const token of [
+      'material_library',
+      'is_current_user_material_admin',
+      'signInWithPassword',
+      'GoTrueClient',
+      'insertSupabaseMaterial',
+      'updateSupabaseMaterial',
+      'deleteSupabaseMaterial',
+      'supabaseMaterialWrites',
+      'supabaseMaterialCommit',
+      'update_material_curve',
+      'add_material_category',
+      'rename_material_category_label',
+      'add_material_source',
+      'rename_material_source',
+      'supabaseExtendedWrites',
+      'supabaseExtendedCommit',
+      'SupabaseSourceRenameRemoteCommittedError',
+    ]) {
+      assert.equal(js.split(token).length - 1, 0, `legacy production must omit ${token}`);
+    }
   }
   const version = await (await fetch(origin + base + 'database-version.json')).json();
   assert.equal(version.databaseSha256, createHash('sha256').update(canonicalJson(JSON.parse(before))).digest('hex'));

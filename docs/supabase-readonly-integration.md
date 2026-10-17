@@ -1,19 +1,21 @@
 # Supabase read-only integration
 
-This document originated during the Step 3 read-only phase. The current implementation now supports Admin material CRUD; see the current-state section.
+This document originated during the Step 3 read-only phase. Historical sections below keep that design. The current-state section describes the catalog that is deployed today and the Step 5 writes that are not deployed yet.
 
 Step 3 added an optional catalog source for Supabase project **CAE Tools**, schema `material_library`.
 
 ## Current state
 
-Supabase is the intended production material data source. The branch implementation and a controlled live check are done. `main` has not been merged, and GitHub Pages has not been deployed from this cutover.
+Production already uses Supabase as the material data source. Everyone can browse that catalog. This Step 5 branch is not merged to `main` and is not deployed.
 
 When `VITE_MATERIAL_DATA_SOURCE=supabase` and example mode is off:
 
-- Everyone can read the catalog.
-- A confirmed Material Library Admin can Add, Edit, and Delete material records. Those writes go directly to Supabase. They are not a local draft and do not use Save Database.
-- Row Level Security authorizes every write. The Admin badge does not bypass it.
-- Stress-strain curve editing, CSV import, JSON recovery/import, category editing, source editing, category/source index management, the legacy Save Database workflow, and GitHub material sync/write stay read-only.
+- Everyone can `SELECT` the catalog.
+- A confirmed Material Library Admin can Add, Edit, and Delete material records. Material writes use the table grants and Row Level Security from migration 005. The Admin badge does not bypass that boundary.
+- A confirmed Admin can update a stress-strain curve, add a category, rename a category label, add a source, and rename a source. Those five writes are direct: they do not create a local draft and they do not use Save Database.
+- Category and source table privileges for frontend roles remain `SELECT` only. Their writes go through the narrow `SECURITY DEFINER` RPCs in migration 007. There is no generic `INSERT`, `UPDATE`, or `DELETE` grant on those tables.
+- Still unavailable: category delete, source delete, CSV import/write, JSON import/recovery write, Save Database, and the legacy GitHub material write.
+- The generic legacy `editable` flag stays false in Supabase mode, so those deferred controls stay closed.
 
 Without the flag, or with any other value, startup stays on the legacy source below. Legacy mode remains supported.
 
@@ -80,7 +82,7 @@ Save Database, GitHub sync, local-file onboarding, and the legacy browser-recove
 
 ## GitHub Pages cutover preparation
 
-Step 4F-1 prepares `.github/workflows/pages.yml` to build Supabase mode. That workflow is not a completed production cutover. `main` is still unchanged, and this branch has not been merged or deployed.
+The Pages workflow on `main` already builds Supabase mode. It deploys only from `main` or a manual dispatch that checks out `main`. This Step 5 branch is not merged and is not what production is running.
 
 The workflow sets `VITE_MATERIAL_DATA_SOURCE` to `supabase`. It reads these repository Actions variables and does not use `.env.local`:
 
