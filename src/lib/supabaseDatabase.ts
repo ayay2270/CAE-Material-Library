@@ -6,7 +6,7 @@ const BUILTIN_CATEGORY_ORDER = ['Metal', 'Plastic', 'Composite', 'Elastomer', 'O
 
 const CATEGORY_COLUMNS = 'id,label,color';
 const SOURCE_COLUMNS = 'name';
-const MATERIAL_COLUMNS = 'id,name,category_id,material_model,sub_category,density,youngs_modulus,poisson_ratio,yield_stress,etan,ultimate_stress,elongation,orthotropic,composite_strength,stress_strain_curve,source,notes,updated_at,history';
+export const MATERIAL_COLUMNS = 'id,name,category_id,material_model,sub_category,density,youngs_modulus,poisson_ratio,yield_stress,etan,ultimate_stress,elongation,orthotropic,composite_strength,stress_strain_curve,source,notes,updated_at,history';
 
 export interface CategoryRow {
   id: string;
