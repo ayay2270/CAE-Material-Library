@@ -1,15 +1,16 @@
 import type { Material } from '../types';
 import { CATEGORY_LABEL } from '../types';
 import { PROPS } from './props';
-import { materialValue } from './materialProperties';
+import { displayedModel, materialValue } from './materialProperties';
 
-export type SortKey = 'name' | 'category' | 'source' | 'updatedAt' | (typeof PROPS)[number]['key'];
+export type SortKey = 'name' | 'model' | 'category' | 'source' | 'updatedAt' | (typeof PROPS)[number]['key'];
 export interface SortState {
   key: SortKey;
   dir: 'asc' | 'desc';
 }
 
 function value(m: Material, key: SortKey): string | number | null {
+  if (key === 'model') return displayedModel(m);
   const v = PROPS.some(p => p.key === key) ? materialValue(m, key as (typeof PROPS)[number]['key']) : m[key];
   if (typeof v === 'string' && v === '') return null;
   return v;

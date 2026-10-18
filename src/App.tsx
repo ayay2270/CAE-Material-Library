@@ -25,7 +25,8 @@ import { LegacyRecovery } from './components/LegacyRecovery';
 import { useColumnPrefs } from './lib/columns';
 import { DEFAULT_UNITS } from './lib/format';
 import type { UnitPrefs } from './lib/format';
-import { matchesQuery, matchesUpdated, sortMaterials } from './lib/sort';
+import { sortMaterials } from './lib/sort';
+import { matchesModel, materialsBeforeModelFilter } from './lib/modelView';
 import type { SortKey, SortState } from './lib/sort';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
@@ -77,6 +78,7 @@ export function App() {
     category: 'all',
     source: 'all',
     updated: 'all',
+    model: 'all',
   });
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
@@ -144,14 +146,13 @@ export function App() {
   }, []);
 
   const rows = useMemo(() => {
-    const filtered = materials.filter(
-      (m) =>
-        (filters.category === 'all' || m.category === filters.category) &&
-        (filters.source === 'all' || m.source === filters.source) &&
-        matchesUpdated(m, filters.updated) &&
-        matchesQuery(m, query, categoryLabels),
-    );
-    return sortMaterials(filtered, sort);
+    const beforeModel = materialsBeforeModelFilter(materials, {
+      category: filters.category,
+      source: filters.source,
+      updated: filters.updated,
+      query,
+    }, categoryLabels);
+    return sortMaterials(beforeModel.filter((material) => matchesModel(material, filters.model ?? 'all')), sort);
   }, [materials, filters, query, sort, categoryLabels]);
 
   const detail = materials.find((m) => m.id === detailId) ?? null;
