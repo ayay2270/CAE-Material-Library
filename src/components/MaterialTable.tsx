@@ -137,12 +137,14 @@ export function MaterialTable(p: Props) {
                   <td className="col-idx sticky s1">{i + 1}</td>
                   {p.columns.map((id) => cell(id, m))}
                   <td className="col-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title={p.editable ? '編輯' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
-                      <EditIcon />
-                    </button>
-                    <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title={p.editable ? '刪除' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
-                      <TrashIcon />
-                    </button>
+                    <span className="row-actions">
+                      <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title={p.editable ? '編輯' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
+                        <EditIcon />
+                      </button>
+                      <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title={p.editable ? '刪除' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
+                        <TrashIcon />
+                      </button>
+                    </span>
                   </td>
                 </tr>
               );

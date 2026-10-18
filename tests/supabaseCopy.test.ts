@@ -42,7 +42,7 @@ test('Supabase Admin material CRUD stays enabled while deferred writes stay clos
   const drawer = await readFile(new URL('../src/components/MaterialDrawer.tsx', import.meta.url), 'utf8');
   const dialogs = await readFile(new URL('../src/components/Dialogs.tsx', import.meta.url), 'utf8');
   assert.match(app, /editable=\{materialCrudEnabled\}/);
-  assert.match(app, /<MaterialDrawer[\s\S]*editable=\{editable\}[\s\S]*materialCrudEnabled=\{materialCrudEnabled\}/);
+  assert.match(app, /<MaterialDetailPage[\s\S]*editable=\{editable\}[\s\S]*materialCrudEnabled=\{materialCrudEnabled\}/);
   assert.match(drawer, /<StressStrainSection[^>]*editable=\{curveEditable\}/);
   assert.match(app, /<ImportExportDialog[\s\S]*editable=\{editable\}/);
   assert.match(app, /readOnlyHint=\{materialState\.dataSource === 'supabase' \? SUPABASE_WRITE_LATER : undefined\}/);

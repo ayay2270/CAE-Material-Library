@@ -559,15 +559,28 @@
   font-size: 13px;
   line-height: 1.25;
   vertical-align: middle;
+  text-align: center;
   color: #4b5e79;
 }
 .materials-page .mat-table th.sortable button {
   height: 57px;
-  padding: 6px 10px;
+  padding: 6px 8px;
+  justify-content: center;
 }
 .materials-page .mat-table .th-text {
+  flex: none;
+  align-items: center;
   gap: 2px;
   line-height: 1.25;
+}
+.materials-page .mat-table thead th .th-main,
+.materials-page .mat-table thead th .th-sub {
+  text-align: center;
+}
+.materials-page .mat-table thead th.num .th-text {
+  align-items: center;
+  margin-left: 0;
+  margin-right: 0;
 }
 .materials-page .mat-table td {
   height: auto;
@@ -692,7 +705,21 @@
   min-width: 164px;
 }
 .materials-page .mat-table .col-updatedAt {
-  min-width: 105px;
+  min-width: 120px;
+  text-align: center;
+}
+.materials-page .mat-table .col-actions {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  padding: 0 8px !important;
+  text-align: center;
+}
+.materials-page .mat-table .row-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
 }
 .materials-page .mat-table .col-category {
   min-width: 90px;
@@ -704,6 +731,7 @@
 }
 .materials-page .mat-table .s1 {
   font-size: 13.5px;
+  text-align: center;
 }
 .table-category {
   display: inline-flex;

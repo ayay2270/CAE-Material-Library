@@ -371,7 +371,7 @@ test('Supabase admin wiring keeps CSV and Save Database closed', async () => {
   assert.equal(app.includes('requestEdit(() => setIndexManager(kind))'), false);
   assert.match(app, /<ImportExportDialog[\s\S]*?editable=\{editable\}/);
   assert.match(app, /readOnlyHint=\{materialState\.dataSource === 'supabase' \? SUPABASE_WRITE_LATER : undefined\}/);
-  assert.match(app, /<MaterialDrawer[\s\S]*?editable=\{editable\}[\s\S]*?materialCrudEnabled=\{materialCrudEnabled\}/);
+  assert.match(app, /<MaterialDetailPage[\s\S]*?editable=\{editable\}[\s\S]*?materialCrudEnabled=\{materialCrudEnabled\}/);
   assert.match(drawer, /<StressStrainSection key=\{m\.id\} material=\{m\} units=\{units\} onSave=\{onSaveCurve\} onDelete=\{onDeleteCurve\} editable=\{curveEditable\} pending=\{curvePending\} \/>/);
   assert.match(status, /\{editable && <button className="btn" disabled=\{!dirty \|\| saving\} onClick=\{\(\) => void saveDatabase\(\)\}>Save Database<\/button>\}/);
   assert.match(sidebar, /\{indexManageEnabled && <button className="index-manage-trigger" aria-label="管理材料分類"/);
