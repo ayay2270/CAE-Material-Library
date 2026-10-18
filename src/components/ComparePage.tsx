@@ -1,6 +1,6 @@
 import type { Material } from '../types';
 import { useIndexes } from '../lib/indexes';
-import { COMPOSITE_STRENGTH_PROPS, ORTHOTROPIC_PROPS, PROPS } from '../lib/props';
+import { ORTHOTROPIC_PROPS, PROPS } from '../lib/props';
 import { isOrthotropic, materialValue } from '../lib/materialProperties';
 import { formatDateLong, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
@@ -23,7 +23,6 @@ export function ComparePage({ materials, selected, units, onToggle, onClear, onB
   const properties = [
     ...PROPS.filter(p => !allOrthotropic || p.key === 'density'),
     ...(picked.some(isOrthotropic) ? ORTHOTROPIC_PROPS : []),
-    ...COMPOSITE_STRENGTH_PROPS.filter(p => picked.some(m => materialValue(m, p.key) !== null)),
   ];
 
   return (

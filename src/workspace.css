@@ -221,19 +221,19 @@
   background: #6b7b92;
 }
 .category-Metal {
-  background: #2563eb;
+  background: #3b82f6;
 }
 .category-Plastic {
-  background: #df8105;
+  background: #f59e0b;
 }
 .category-Composite {
-  background: #813ef4;
+  background: #a855f7;
 }
 .category-Elastomer {
-  background: #0d9488;
+  background: #22c55e;
 }
 .category-Others {
-  background: #6b7b92;
+  background: #94a3b8;
 }
 .category-all {
   background: #566276;
@@ -499,30 +499,54 @@
 }
 .materials-page .mat-table {
   min-width: 1400px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .materials-page .mat-table thead th {
-  height: 50px;
+  height: 56px;
   background: #e9eef7;
-  font-size: 10.5px;
+  font-size: 12px;
+  line-height: 1.25;
+  vertical-align: middle;
   color: #4b5e79;
 }
 .materials-page .mat-table th.sortable button {
-  height: 49px;
-  padding: 0 9px;
+  height: 55px;
+  padding: 6px 10px;
+}
+.materials-page .mat-table .th-text {
+  gap: 2px;
+  line-height: 1.25;
 }
 .materials-page .mat-table td {
-  height: 33px;
-  padding: 0 9px;
+  height: 36px;
+  padding: 0 10px;
+  vertical-align: middle;
   border-bottom-color: #e4e8f0;
   border-right-color: #eef1f6;
 }
 .materials-page .mat-table td.num {
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 .materials-page .mat-table .th-sub {
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.2;
   color: #8190a5;
+}
+.materials-page .mat-table thead th.col-check,
+.materials-page .mat-table tbody td.col-check {
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
+  padding: 0 !important;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 0;
+}
+.materials-page .mat-table .col-check input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  vertical-align: middle;
 }
 .materials-page .mat-table .col-name {
   min-width: 136px;
@@ -559,14 +583,17 @@
 }
 .materials-page .mat-table tbody .col-name {
   color: #234268;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+}
+.materials-page .mat-table .s1 {
+  font-size: 13px;
 }
 .table-category {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 12px;
   color: #5a6a81;
 }
 .table-category .category-dot {
@@ -813,7 +840,7 @@
     padding: 18px 22px;
   }
   .materials-page .mat-table td {
-    height: 34px;
+    height: 36px;
   }
 }
 @media (max-width: 1450px) {

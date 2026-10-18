@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import type { Material } from '../types';
-import { COMPOSITE_STRENGTH_PROPS, ORTHOTROPIC_GROUPS, type PropDef } from '../lib/props';
+import { ORTHOTROPIC_GROUPS, type PropDef } from '../lib/props';
 import { formatValue, unitFor, type UnitPrefs } from '../lib/format';
 import { materialValue } from '../lib/materialProperties';
 import { InfoIcon } from './icons';
@@ -30,9 +30,5 @@ export function OrthotropicProperties({ material, units }: { material: Material;
         <dl>{group.props.map(property)}</dl>
       </section>)}
     </div>
-    {COMPOSITE_STRENGTH_PROPS.some(p => materialValue(material, p.key) !== null) && <>
-      <h3>Strength / Failure Properties</h3>
-      <dl className="prop-grid">{COMPOSITE_STRENGTH_PROPS.map(property)}</dl>
-    </>}
   </div>;
 }

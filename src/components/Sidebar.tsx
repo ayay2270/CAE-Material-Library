@@ -83,7 +83,7 @@ export function Sidebar({
           <span>全部材料</span>
           <b>{materials.length}</b>
         </button>
-        {indexes.categories.map(({id:category,label,color}) => (
+        {indexes.categories.map(({id:category,label}) => (
           <button
             key={category}
             className={filters.category === category ? 'active' : ''}
@@ -91,7 +91,7 @@ export function Sidebar({
             onClick={() => filter({ category })}
           >
             <i
-              className="category-dot" style={{background:color}}
+              className="category-dot" style={{background:indexes.color(category)}}
               aria-hidden="true"
             />
             <span>{label}</span>

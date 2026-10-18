@@ -7,13 +7,30 @@ export interface MaterialIndexes {
   sources: string[];
 }
 export type IndexKind = 'category' | 'source';
-const colors = ['#2563eb', '#df8105', '#813ef4', '#0d9488', '#6b7b92'];
+/** Built-in presentation colors. Stored index colors stay unchanged. */
+export const CATEGORY_PRESENTATION_COLORS: Record<string, string> = {
+  Metal: '#3b82f6',
+  Plastic: '#f59e0b',
+  Composite: '#a855f7',
+  Elastomer: '#22c55e',
+  Others: '#94a3b8',
+};
+
+/** One color for sidebar, table, map, cards, and the drawer badge. */
+export function categoryPresentationColor(id: string, stored?: string | null): string {
+  const builtin = CATEGORY_PRESENTATION_COLORS[id];
+  if (builtin) return builtin;
+  if (stored && /^#[0-9a-fA-F]{6}$/.test(stored)) return stored;
+  return '#94a3b8';
+}
+
+const storedDefaultColors = ['#2563eb', '#df8105', '#813ef4', '#0d9488', '#6b7b92'];
 export function defaultIndexes(): MaterialIndexes {
   return {
     categories: CATEGORIES.map((id, i) => ({
       id,
       label: CATEGORY_LABEL[id],
-      color: colors[i],
+      color: storedDefaultColors[i],
     })),
     sources: [],
   };
@@ -105,6 +122,6 @@ export function useIndexes() {
     label: (id: string) =>
       indexes.categories.find((c) => c.id === id)?.label ?? id,
     color: (id: string) =>
-      indexes.categories.find((c) => c.id === id)?.color ?? '#6b7b92',
+      categoryPresentationColor(id, indexes.categories.find((c) => c.id === id)?.color),
   };
 }
