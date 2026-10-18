@@ -328,6 +328,58 @@
   gap: 14px;
   flex-wrap: wrap;
 }
+.model-quick-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.model-quick-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #fff;
+  color: #4b5d78;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 1px rgba(36, 56, 88, 0.04);
+}
+.model-quick-filters button span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.model-quick-filters .model-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.model-quick-filters button.tone-isotropic {
+  color: #3b6fd4;
+}
+.model-quick-filters button.tone-orthotropic {
+  color: #6d28d9;
+  background: #f7f2ff;
+}
+.model-quick-filters button.active {
+  background: #2f6bff;
+  color: #fff;
+  box-shadow: none;
+}
+.model-quick-filters button.tone-isotropic.active {
+  background: #e7f0ff;
+  color: #2f62c8;
+  box-shadow: inset 0 0 0 1px #c5d8fb;
+}
+.model-quick-filters button.tone-orthotropic.active {
+  background: #efe6ff;
+  color: #6d28d9;
+  box-shadow: inset 0 0 0 1px #ddccff;
+}
 .category-chips {
   display: flex;
   gap: 6px;
@@ -498,37 +550,64 @@
   flex: 0 1 auto;
 }
 .materials-page .mat-table {
-  min-width: 1400px;
-  font-size: 13px;
+  min-width: 1480px;
+  font-size: 14px;
 }
 .materials-page .mat-table thead th {
-  height: 56px;
+  height: 58px;
   background: #e9eef7;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.25;
   vertical-align: middle;
+  text-align: center;
   color: #4b5e79;
 }
 .materials-page .mat-table th.sortable button {
-  height: 55px;
-  padding: 6px 10px;
+  height: 57px;
+  padding: 6px 8px;
+  justify-content: center;
 }
 .materials-page .mat-table .th-text {
+  flex: none;
+  align-items: center;
   gap: 2px;
   line-height: 1.25;
 }
+.materials-page .mat-table thead th .th-main,
+.materials-page .mat-table thead th .th-sub {
+  text-align: center;
+}
+.materials-page .mat-table thead th.num .th-text {
+  align-items: center;
+  margin-left: 0;
+  margin-right: 0;
+}
 .materials-page .mat-table td {
-  height: 36px;
-  padding: 0 10px;
+  height: auto;
+  min-height: 40px;
+  padding: 7px 10px;
   vertical-align: middle;
   border-bottom-color: #e4e8f0;
   border-right-color: #eef1f6;
 }
+.materials-page .mat-table td.num,
+.materials-page .mat-table thead th.num {
+  text-align: center;
+}
+.materials-page .mat-table thead th.num .th-text {
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.materials-page .mat-table thead th.num .th-main,
+.materials-page .mat-table thead th.num .th-sub {
+  text-align: center;
+}
 .materials-page .mat-table td.num {
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 .materials-page .mat-table .th-sub {
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 1.2;
   color: #8190a5;
 }
@@ -549,7 +628,57 @@
   vertical-align: middle;
 }
 .materials-page .mat-table .col-name {
-  min-width: 136px;
+  min-width: 148px;
+  max-width: 176px;
+}
+.materials-page .mat-table tbody td.col-name,
+.materials-page .mat-table tbody td.col-source {
+  white-space: normal;
+  line-height: 1.3;
+  overflow: visible;
+  text-overflow: clip;
+}
+.materials-page .mat-table .col-model {
+  min-width: 112px;
+  text-align: center;
+}
+.model-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.model-badge.is-isotropic {
+  color: #3b6fd4;
+  background: #e7f0ff;
+}
+.model-badge.is-orthotropic {
+  color: #6d28d9;
+  background: #efe6ff;
+  box-shadow: inset 0 0 0 1px #e3d4ff;
+}
+.materials-page .mat-table tbody tr.row-orthotropic td {
+  background-color: #f6f3ff;
+}
+.materials-page .mat-table tbody tr.row-orthotropic td.col-check {
+  box-shadow: inset 3px 0 0 #8b6cf6;
+}
+.materials-page .mat-table tbody tr.row-orthotropic:hover td {
+  background-color: var(--row-hover);
+}
+.materials-page .mat-table tbody tr.row-orthotropic.selected td,
+.materials-page .mat-table tbody tr.row-orthotropic.selected:hover td {
+  background-color: var(--row-sel);
+}
+.materials-page .mat-table tbody tr.row-orthotropic.active td,
+.materials-page .mat-table tbody tr.row-orthotropic.active:hover td {
+  background-color: #dce9fc;
 }
 .materials-page .mat-table .col-density {
   min-width: 100px;
@@ -576,24 +705,39 @@
   min-width: 164px;
 }
 .materials-page .mat-table .col-updatedAt {
-  min-width: 105px;
+  min-width: 120px;
+  text-align: center;
+}
+.materials-page .mat-table .col-actions {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  padding: 0 8px !important;
+  text-align: center;
+}
+.materials-page .mat-table .row-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
 }
 .materials-page .mat-table .col-category {
   min-width: 90px;
 }
 .materials-page .mat-table tbody .col-name {
   color: #234268;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 .materials-page .mat-table .s1 {
-  font-size: 13px;
+  font-size: 13.5px;
+  text-align: center;
 }
 .table-category {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
+  font-size: 13px;
   color: #5a6a81;
 }
 .table-category .category-dot {
@@ -840,7 +984,7 @@
     padding: 18px 22px;
   }
   .materials-page .mat-table td {
-    height: 36px;
+    min-height: 40px;
   }
 }
 @media (max-width: 1450px) {

@@ -11,6 +11,7 @@ import {
 } from '../lib/sort';
 import type { UnitPrefs } from '../lib/format';
 import { COLUMNS } from '../lib/columns';
+import { countDisplayedModels, materialsBeforeModelFilter, type ModelFilter } from '../lib/modelView';
 import { useIndexes } from '../lib/indexes';
 import {
   ColumnsIcon,
@@ -23,6 +24,7 @@ export interface Filters {
   category: 'all' | Category;
   source: 'all' | string;
   updated: UpdatedFilter;
+  model: ModelFilter;
 }
 export type LibraryMode = 'table' | 'cards';
 interface Props {
@@ -51,6 +53,15 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
     const sources = indexes.sources;
     const count = (category: Category) =>
       p.materials.filter((m) => m.category === category).length;
+    const labels = Object.fromEntries(indexes.categories.map((category) => [category.id, category.label]));
+    const modelCounts = countDisplayedModels(materialsBeforeModelFilter(p.materials, {
+      category: p.filters.category,
+      source: p.filters.source,
+      updated: p.filters.updated,
+      query: p.query,
+    }, labels));
+    const model = p.filters.model ?? 'all';
+    const setModel = (next: ModelFilter) => p.onFilters({ ...p.filters, model: next });
     return (
       <div className="toolbar-block">
         <div className="library-heading">
@@ -175,6 +186,34 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
             </div>
           </div>
         </div>
+        <div className="model-quick-filters" role="group" aria-label="材料模型篩選">
+          <button
+            type="button"
+            className={model === 'all' ? 'active' : ''}
+            aria-pressed={model === 'all'}
+            onClick={() => setModel('all')}
+          >
+            全部 <span>({modelCounts.all})</span>
+          </button>
+          <button
+            type="button"
+            className={`tone-isotropic ${model === 'Isotropic' ? 'active' : ''}`}
+            aria-pressed={model === 'Isotropic'}
+            onClick={() => setModel('Isotropic')}
+          >
+            <i className="model-dot" aria-hidden="true" />
+            只看 Isotropic <span>({modelCounts.Isotropic})</span>
+          </button>
+          <button
+            type="button"
+            className={`tone-orthotropic ${model === 'Orthotropic' ? 'active' : ''}`}
+            aria-pressed={model === 'Orthotropic'}
+            onClick={() => setModel('Orthotropic')}
+          >
+            <i className="model-dot" aria-hidden="true" />
+            只看 Orthotropic <span>({modelCounts.Orthotropic})</span>
+          </button>
+        </div>
         <div className="library-data-tools">
           <h2>
             {p.filters.category === 'all'
@@ -184,11 +223,12 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
           </h2>
           {(p.filters.category !== 'all' ||
             p.filters.source !== 'all' ||
-            p.filters.updated !== 'all') && (
+            p.filters.updated !== 'all' ||
+            model !== 'all') && (
             <button
               className="link-btn small"
               onClick={() =>
-                p.onFilters({ category: 'all', source: 'all', updated: 'all' })
+                p.onFilters({ category: 'all', source: 'all', updated: 'all', model: 'all' })
               }
             >
               清除篩選

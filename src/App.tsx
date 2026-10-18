@@ -25,7 +25,8 @@ import { LegacyRecovery } from './components/LegacyRecovery';
 import { useColumnPrefs } from './lib/columns';
 import { DEFAULT_UNITS } from './lib/format';
 import type { UnitPrefs } from './lib/format';
-import { matchesQuery, matchesUpdated, sortMaterials } from './lib/sort';
+import { sortMaterials } from './lib/sort';
+import { matchesModel, materialsBeforeModelFilter } from './lib/modelView';
 import type { SortKey, SortState } from './lib/sort';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
@@ -35,7 +36,8 @@ import { Sidebar } from './components/Sidebar';
 import { MaterialCards } from './components/MaterialCards';
 import type { LibraryMode } from './components/Toolbar';
 import { MaterialTable } from './components/MaterialTable';
-import { MaterialDrawer } from './components/MaterialDrawer';
+import { MaterialDetailPage } from './components/MaterialDetailPage';
+import { materialIdFromSearch, searchWithMaterial } from './lib/detailNavigation';
 import { IndexContext, type IndexKind } from './lib/indexes';
 import { IndexManager } from './components/IndexManager';
 import { MaterialForm } from './components/MaterialForm';
@@ -77,6 +79,7 @@ export function App() {
     category: 'all',
     source: 'all',
     updated: 'all',
+    model: 'all',
   });
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
@@ -95,6 +98,7 @@ export function App() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const deleteLock = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const pushedDetail = useRef(false);
   const materialCrudEnabled = materialCrudEnabledFor(materialState.dataSource, editable, supabaseAdmin);
   const curveWriteEnabled = curveWriteEnabledFor(materialState.dataSource, editable, supabaseAdmin);
   const indexWriteEnabled = indexWriteEnabledFor(materialState.dataSource, editable, supabaseAdmin);
@@ -144,14 +148,13 @@ export function App() {
   }, []);
 
   const rows = useMemo(() => {
-    const filtered = materials.filter(
-      (m) =>
-        (filters.category === 'all' || m.category === filters.category) &&
-        (filters.source === 'all' || m.source === filters.source) &&
-        matchesUpdated(m, filters.updated) &&
-        matchesQuery(m, query, categoryLabels),
-    );
-    return sortMaterials(filtered, sort);
+    const beforeModel = materialsBeforeModelFilter(materials, {
+      category: filters.category,
+      source: filters.source,
+      updated: filters.updated,
+      query,
+    }, categoryLabels);
+    return sortMaterials(beforeModel.filter((material) => matchesModel(material, filters.model ?? 'all')), sort);
   }, [materials, filters, query, sort, categoryLabels]);
 
   const detail = materials.find((m) => m.id === detailId) ?? null;
@@ -198,7 +201,7 @@ export function App() {
     if (!(supabaseDataSourceEnabled && materialState.dataSource === 'supabase' && 'materialMutations' in materialState && materialState.materialMutations)) {
       remove(target.id);
       setNotice(`已從草稿刪除 ${target.name}；請按 Save Database。`);
-      if (detailId === target.id) setDetailId(null);
+      if (detailId === target.id) closeDetail();
       setDeleting(null);
       return;
     }
@@ -210,7 +213,7 @@ export function App() {
       () => mutations.remove(target.id),
       () => {
         setNotice(supabaseCommittedNotice('delete', target.name));
-        if (detailId === target.id) setDetailId(null);
+        if (detailId === target.id) closeDetail();
         setDeleting(current => current?.id === target.id ? null : current);
       },
     ).catch(error => {
@@ -221,7 +224,34 @@ export function App() {
     });
   };
 
-  const openDetail = (m: Material) => setDetailId(m.id);
+  const openDetail = (m: Material) => {
+    setDetailId(m.id);
+    if (materialIdFromSearch(window.location.search) === m.id) return;
+    const next = `${window.location.pathname}${searchWithMaterial(window.location.search, m.id)}${window.location.hash}`;
+    window.history.pushState({ materialDetail: true }, '', next);
+    pushedDetail.current = true;
+  };
+  const closeDetail = () => {
+    if (pushedDetail.current) {
+      pushedDetail.current = false;
+      window.history.back();
+      return;
+    }
+    setDetailId(null);
+    const next = `${window.location.pathname}${searchWithMaterial(window.location.search, null)}${window.location.hash}`;
+    window.history.replaceState({}, '', next);
+  };
+
+  useEffect(() => {
+    const apply = () => {
+      pushedDetail.current = false;
+      setDetailId(materialIdFromSearch(window.location.search));
+    };
+    const initial = materialIdFromSearch(window.location.search);
+    if (initial) setDetailId(initial);
+    window.addEventListener('popstate', apply);
+    return () => window.removeEventListener('popstate', apply);
+  }, []);
 
   const navigate = (v: View) => setView(v);
   const showLocalEditing = () => setDialog('localEditing');
@@ -249,7 +279,7 @@ export function App() {
       {materialState.exampleMode && <section className="orthotropic-example-banner" aria-label="FR4 獨立範例">
         <div><strong>FR4 Orthotropic 獨立範例</strong><p>可新增、編輯與比較；儲存僅限此分頁，重新整理會保留。原始 materials.json 與 FR4 density 不受影響。</p></div>
         <div className="orthotropic-example-actions">
-          <button className="btn" disabled={!materials.some(m => m.id === EXAMPLE_ID)} onClick={() => { setEditing(null); setDetailId(EXAMPLE_ID); }}>查看範例</button>
+          <button className="btn" disabled={!materials.some(m => m.id === EXAMPLE_ID)} onClick={() => { const example = materials.find(m => m.id === EXAMPLE_ID); setEditing(null); if (example) openDetail(example); }}>查看範例</button>
           <button className="btn" disabled={!materials.some(m => m.id === EXAMPLE_ID)} onClick={() => { setDetailId(null); setEditing(materials.find(m => m.id === EXAMPLE_ID)!); }}>編輯範例</button>
           <button className="btn" onClick={() => { setEditing(null); setDetailId(null); setSelected(materials.filter(m => m.id === EXAMPLE_ID || m.name === 'SGCC').map(m => m.id)); setView('compare'); }}>Mixed Compare</button>
           <a className="btn" href={import.meta.env.BASE_URL}>離開範例</a>
@@ -270,7 +300,51 @@ export function App() {
           indexManageEnabled={indexWriteEnabled && !indexRemoteStale}
         />
         <div className="workspace-content">
-          {view === 'materials' && (
+          {detail && (
+            <MaterialDetailPage
+              editable={editable}
+              materialCrudEnabled={materialCrudEnabled}
+              curveEditable={curveWriteEnabled}
+              curvePending={materialState.materialWriting}
+              readOnlyTitle={crudReadOnlyTitle}
+              material={detail}
+              units={units}
+              onClose={closeDetail}
+              onEdit={() => requestCrud(() => setEditing(detail))}
+              onDelete={() => requestCrud(() => { setDeleteError(null); setDeleting(detail); })}
+              onSaveCurve={async (data) => {
+                if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
+                  if (!('extendedMutations' in materialState) || !materialState.extendedMutations) return 'Supabase 曲線寫入未啟用。';
+                  try {
+                    await materialState.extendedMutations.saveCurve(detail.id, data);
+                    setNotice(`已更新 Supabase 材料曲線：${detail.name}。`);
+                    return null;
+                  } catch (error) {
+                    return error instanceof Error && error.message ? error.message : '曲線儲存失敗。';
+                  }
+                }
+                const error = setCurve(detail.id, data);
+                if (!error) setNotice(`已更新 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
+                return error;
+              }}
+              onDeleteCurve={async () => {
+                if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
+                  if (!('extendedMutations' in materialState) || !materialState.extendedMutations) return 'Supabase 曲線寫入未啟用。';
+                  try {
+                    await materialState.extendedMutations.clearCurve(detail.id);
+                    setNotice(`已刪除 Supabase 材料完整曲線：${detail.name}。`);
+                    return null;
+                  } catch (error) {
+                    return error instanceof Error && error.message ? error.message : '曲線刪除失敗。';
+                  }
+                }
+                const error = clearCurve(detail.id);
+                if (!error) setNotice(`已移除 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
+                return error;
+              }}
+            />
+          )}
+          {!detail && view === 'materials' && (
             <main className="page materials-page">
               <Toolbar
                 ref={searchRef}
@@ -338,7 +412,7 @@ export function App() {
             </main>
           )}
 
-          {view === 'compare' && (
+          {!detail && view === 'compare' && (
             <ComparePage
               materials={materials}
               selected={selected}
@@ -350,11 +424,11 @@ export function App() {
             />
           )}
 
-          {view === 'etan' && <EtanPage materials={materials} />}
+          {!detail && view === 'etan' && <EtanPage materials={materials} />}
 
-          {view === 'density-tuner' && <DensityTuner />}
+          {!detail && view === 'density-tuner' && <DensityTuner />}
 
-          {view === 'map' && (
+          {!detail && view === 'map' && (
             <MaterialMap
               materials={materials}
               onBack={() => setView('materials')}
@@ -365,50 +439,6 @@ export function App() {
         </div>
       </div>
 
-      {detail && !editing && !deleting && (
-        <MaterialDrawer
-          editable={editable}
-          materialCrudEnabled={materialCrudEnabled}
-          curveEditable={curveWriteEnabled}
-          curvePending={materialState.materialWriting}
-          readOnlyTitle={crudReadOnlyTitle}
-          material={detail}
-          units={units}
-          onClose={() => setDetailId(null)}
-          onEdit={() => requestCrud(() => setEditing(detail))}
-          onDelete={() => requestCrud(() => { setDeleteError(null); setDeleting(detail); })}
-          onSaveCurve={async (data) => {
-            if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
-              if (!('extendedMutations' in materialState) || !materialState.extendedMutations) return 'Supabase 曲線寫入未啟用。';
-              try {
-                await materialState.extendedMutations.saveCurve(detail.id, data);
-                setNotice(`已更新 Supabase 材料曲線：${detail.name}。`);
-                return null;
-              } catch (error) {
-                return error instanceof Error && error.message ? error.message : '曲線儲存失敗。';
-              }
-            }
-            const error = setCurve(detail.id, data);
-            if (!error) setNotice(`已更新 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
-            return error;
-          }}
-          onDeleteCurve={async () => {
-            if (supabaseDataSourceEnabled && materialState.dataSource === 'supabase') {
-              if (!('extendedMutations' in materialState) || !materialState.extendedMutations) return 'Supabase 曲線寫入未啟用。';
-              try {
-                await materialState.extendedMutations.clearCurve(detail.id);
-                setNotice(`已刪除 Supabase 材料完整曲線：${detail.name}。`);
-                return null;
-              } catch (error) {
-                return error instanceof Error && error.message ? error.message : '曲線刪除失敗。';
-              }
-            }
-            const error = clearCurve(detail.id);
-            if (!error) setNotice(`已移除 ${detail.name} 的完整曲線草稿；請按 Save Database。`);
-            return error;
-          }}
-        />
-      )}
       {editing && materialCrudEnabled && (
         <MaterialForm
           key={editing === 'new' ? 'new' : editing.id}

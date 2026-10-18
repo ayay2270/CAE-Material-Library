@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Material } from '../types';
 import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
-import { materialValue } from '../lib/materialProperties';
+import { displayedModel, isOrthotropic, materialValue } from '../lib/materialProperties';
 import { formatDay, formatValue, unitFor } from '../lib/format';
 import type { UnitPrefs } from '../lib/format';
 import { COLUMN_BY_ID } from '../lib/columns';
@@ -73,6 +73,14 @@ export function MaterialTable(p: Props) {
     switch (id) {
       case 'name':
         return <td key={id} className="col-name sticky s2">{m.name}</td>;
+      case 'model': {
+        const model = displayedModel(m);
+        return (
+          <td key={id} className="col-model">
+            <span className={`model-badge is-${model.toLowerCase()}`}>{model}</span>
+          </td>
+        );
+      }
       case 'category':
         return <td key={id} className="col-category"><span className="table-category"><i className="category-dot" style={{background:indexes.color(m.category)}} aria-hidden="true" />{indexes.label(m.category)}</span></td>;
       case 'source':
@@ -116,7 +124,7 @@ export function MaterialTable(p: Props) {
               return (
                 <tr
                   key={m.id}
-                  className={`${checked ? 'selected' : ''} ${p.activeId === m.id ? 'active' : ''}`}
+                  className={`${checked ? 'selected' : ''} ${p.activeId === m.id ? 'active' : ''} ${isOrthotropic(m) ? 'row-orthotropic' : ''}`}
                   onClick={() => p.onOpen(m)}
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -129,12 +137,14 @@ export function MaterialTable(p: Props) {
                   <td className="col-idx sticky s1">{i + 1}</td>
                   {p.columns.map((id) => cell(id, m))}
                   <td className="col-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title={p.editable ? '編輯' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
-                      <EditIcon />
-                    </button>
-                    <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title={p.editable ? '刪除' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
-                      <TrashIcon />
-                    </button>
+                    <span className="row-actions">
+                      <button className="icon-btn" onClick={() => p.onEdit(m)} aria-label={`編輯 ${m.name}`} title={p.editable ? '編輯' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
+                        <EditIcon />
+                      </button>
+                      <button className="icon-btn danger" onClick={() => p.onDelete(m)} aria-label={`刪除 ${m.name}`} title={p.editable ? '刪除' : (p.readOnlyTitle ?? LOCAL_EDITING_HINT)}>
+                        <TrashIcon />
+                      </button>
+                    </span>
                   </td>
                 </tr>
               );

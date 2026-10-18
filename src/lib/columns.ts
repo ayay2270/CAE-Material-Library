@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { PropKey } from '../types';
 import { PROPS } from './props';
 
-export type ColId = 'name' | 'category' | PropKey | 'source' | 'updatedAt';
+export type ColId = 'name' | 'model' | 'category' | PropKey | 'source' | 'updatedAt';
 
 export interface ColDef {
   id: ColId;
@@ -15,6 +15,7 @@ export interface ColDef {
 
 export const COLUMNS: ColDef[] = [
   { id: 'name', label: 'Material Name', pinned: true },
+  { id: 'model', label: 'Model', pinned: true },
   { id: 'category', label: 'Category' },
   ...PROPS.map((p) => ({ id: p.key as ColId, label: p.label, numeric: true })),
   { id: 'source', label: 'Source' },
@@ -93,7 +94,7 @@ export function useColumnPrefs() {
 
   const reset = useCallback(() => setPrefs(normalizePrefs(null)), []);
 
-  const visible: ColId[] = ['name', ...prefs.order.filter((id) => !prefs.hidden.includes(id))];
+  const visible: ColId[] = ['name', 'model', ...prefs.order.filter((id) => id !== 'name' && id !== 'model' && !prefs.hidden.includes(id))];
 
   return { prefs, visible, move, step, toggle, reset };
 }

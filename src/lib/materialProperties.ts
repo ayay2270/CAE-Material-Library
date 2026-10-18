@@ -6,6 +6,11 @@ export function isOrthotropic(material: Pick<MaterialInput, 'category' | 'materi
   return material.category === 'Composite' && material.materialModel === 'Orthotropic';
 }
 
+/** Table label. Missing or non-orthotropic models stay Isotropic without writing the record. */
+export function displayedModel(material: Pick<MaterialInput, 'category' | 'materialModel'>): 'Isotropic' | 'Orthotropic' {
+  return isOrthotropic(material) ? 'Orthotropic' : 'Isotropic';
+}
+
 /**
  * Isotropic work hardening slope H (MPa), always calculated from E, Yield Stress, Ultimate Stress
  * and Elongation. The legacy stored `etan` field is kept in the data but never used as H.

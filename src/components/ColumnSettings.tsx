@@ -54,6 +54,12 @@ export function ColumnSettings({ prefs, units, onUnits, onMove, onStep, onToggle
           <span className="col-label">{COLUMN_BY_ID.name.label}</span>
           <span className="muted small">固定</span>
         </li>
+        <li className="col-item locked" title="Model 固定顯示於 Material Name 之後">
+          <span className="grip off" aria-hidden="true">🔒</span>
+          <input type="checkbox" checked disabled aria-label="Model 固定顯示" />
+          <span className="col-label">{COLUMN_BY_ID.model.label}</span>
+          <span className="muted small">固定</span>
+        </li>
         {prefs.order.map((id, i) => {
           const hidden = prefs.hidden.includes(id);
           return (
