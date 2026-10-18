@@ -44,7 +44,7 @@ export function IndexManager({
       ? indexes.categories.map((c) => ({
           id: c.id,
           name: c.label,
-          color: c.color,
+          color: indexes.color(c.id),
         }))
       : indexes.sources.map((s) => ({ id: s, name: s, color: null }));
   const submit = async () => {

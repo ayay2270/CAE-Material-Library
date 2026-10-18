@@ -2,7 +2,7 @@
 
 This is an additive schemaVersion 1 extension. Existing records, including legacy
 Composite FR4, are unchanged. `materialModel` omitted or `Isotropic` uses the
-existing isotropic workflow; for Composite the UI calls this **Isotropic Equivalent**.
+existing isotropic workflow; for Composite the UI calls this **Isotropic**.
 Only `category === 'Composite' && materialModel === 'Orthotropic'` activates the
 new form, drawer, card and comparison fields.
 
@@ -27,17 +27,29 @@ compositeStrength?: {
 When a nested group is supplied, include its known keys; use `null` for unknown
 values. E, G and supplied strengths must be positive finite numbers. ν accepts
 any finite number, without an isotropic 0.5 cap or stability constraint.
-No missing value is replaced with zero. Stored units are t/mm³ and MPa;
-display unit preferences also apply to Orthotropic moduli and strengths.
+No missing value is replaced with zero. Stored units are t/mm³ and MPa.
+Display unit preferences apply to the Orthotropic elastic moduli.
 
-Selecting another model preserves previously saved inactive data. Table, card,
-drawer and compare use the active model and suppress inactive values. Orthotropic
-materials are excluded from the single-E Material Map and isotropic plasticity
-calculator material picker. No directional value is automatically substituted for E.
+Phase 1 UI exposes Density and the nine Orthotropic elastic constants only:
+E1, E2, E3, G12, G13, G23, ν12, ν13, and ν23. `compositeStrength`
+(Xt, Xc, Yt, Yc, S12) remains a stored compatibility field. Those strength
+values are not editable or displayed in the current form, drawer, or compare
+view. Saving preserves an existing `compositeStrength` object. A later
+failure-model feature may expose these fields.
+
+Selecting another model preserves previously saved inactive data. Editing a
+legacy Composite record that has no `materialModel`, while it remains
+Isotropic, leaves `materialModel` omitted. Choosing Orthotropic
+writes `materialModel: 'Orthotropic'`. Table, card, drawer and compare use the
+active model and suppress inactive values. Orthotropic materials are excluded
+from the single-E Material Map and isotropic plasticity calculator material
+picker. No directional value is automatically substituted for E.
 
 The default table and its column preferences are unchanged. Cards show only
-ρ, E1, E2, E3, G12; the drawer shows all nine elastic constants and conditionally
-shows the strength group. Mixed compare uses `—` for inapplicable properties.
+ρ, E1, E2, E3, G12. The drawer shows Density and all nine elastic constants.
+Mixed compare includes those nine constants when an Orthotropic material is
+selected and uses `—` for inapplicable properties. Compare does not show
+Composite Strength.
 
 ## Persistence and CSV
 
@@ -110,6 +122,6 @@ scripts are outside the npm test suite and were not changed by this feature.
 
 Open `?example=fr4-orthotropic` on the deployed site, or use the link in the unlinked database panel. The explicit example banner offers Drawer, Edit and SGCC + FR4 Mixed Compare shortcuts; the existing Add button uses the same material form.
 
-This mode clones the committed database and adds a separate `example-fr4-orthotropic` record. Every original record, including legacy FR4 and its density, is retained. The supplied nine constants are sample values, not confirmed material specifications. No schema migration is required.
+This mode clones the committed database and adds a separate `example-fr4-orthotropic` record. Every original record, including legacy FR4 and its density, is retained. The supplied nine constants are sample values, not confirmed material specifications. A newly created example does not include `compositeStrength`. An example already saved in sessionStorage that still has that object continues to load. No schema migration is required.
 
 “儲存範例” validates and writes only the dedicated `cae-material-library:fr4-example:v1` sessionStorage key. Refresh restores saved edits in that tab. Closing the tab normally clears the sandbox (browser session restoration may retain it). Exiting the example opens the normal library; no example is loaded there. The example bypasses remembered file handles, local dev API loading/writing, legacy recovery and GitHub sync. It never writes the repository or a linked file. Unsaved drafts still trigger the existing leave warning, and JSON export remains available.

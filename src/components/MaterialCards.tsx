@@ -53,7 +53,8 @@ export function MaterialCards({
   return (
     <div className="material-cards-scroll">
       <div className="material-card-groups">
-        {indexes.categories.map(({id:category,label,color}) => {
+        {indexes.categories.map(({id:category,label}) => {
+          const color = indexes.color(category);
           const englishName = Object.keys(english).includes(category) ? english[category] : '';
           const group = rows.filter(
             (material) => material.category === category,

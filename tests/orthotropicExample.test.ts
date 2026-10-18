@@ -14,9 +14,17 @@ test('example is opt-in; original records and FR4 density are preserved in a sep
   assert.equal(JSON.stringify(master), before);
   assert.deepEqual(example.materials.slice(0, master.materials.length), master.materials);
   const fr4 = example.materials.find(m => m.id === EXAMPLE_ID)!;
-  assert.equal(fr4.density, master.materials.find(m => m.name === 'FR4')!.density);
+  const legacy = master.materials.find(m => m.name === 'FR4')!;
+  assert.equal(fr4.density, legacy.density);
+  assert.equal(fr4.youngsModulus, 25000);
+  assert.equal(fr4.poissonRatio, 0.35);
+  assert.equal(fr4.yieldStress, 196);
+  assert.equal(fr4.ultimateStress, legacy.ultimateStress);
+  assert.equal(fr4.elongation, legacy.elongation);
+  assert.equal(legacy.youngsModulus, 25000);
   assert.equal(fr4.materialModel, 'Orthotropic');
   assert.equal(Object.keys(fr4.orthotropic!).length, 9);
+  assert.equal(Object.hasOwn(fr4, 'compositeStrength'), false);
   fr4.orthotropic!.e1 = 23000;
   assert.equal(createOrthotropicExample(master).materials.find(m => m.id === EXAMPLE_ID)!.orthotropic!.e1, 22000);
 });
@@ -33,4 +41,15 @@ test('example edits round-trip using only the dedicated session key; corrupt sto
   const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
   assert.deepEqual(readOrthotropicExample(master, blocked), createOrthotropicExample(master));
   assert.throws(() => saveOrthotropicExample(example, blocked), /blocked/);
+});
+test('a previously saved example that still has compositeStrength remains schema-valid', () => {
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
+  const saved = createOrthotropicExample(master);
+  const record = saved.materials.find(m => m.id === EXAMPLE_ID)!;
+  record.compositeStrength = { xt: 300, xc: 400, yt: 250, yc: null, s12: 100 };
+  saveOrthotropicExample(saved, storage);
+  const loaded = readOrthotropicExample(master, storage);
+  assert.deepEqual(loaded.materials.find(m => m.id === EXAMPLE_ID)!.compositeStrength, record.compositeStrength);
+  assert.equal(validateDatabase(loaded), loaded);
 });

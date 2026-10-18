@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { useIndexes } from '../lib/indexes';
 import { SUPABASE_EXISTING_SOURCE_REQUIRED } from '../lib/supabaseMaterialCommit';
-import type { Category, CompositeStrength, Material, MaterialInput, MaterialModel, MaterialPropertyKey, OrthotropicProperties } from '../types';
-import { COMPOSITE_STRENGTH_PROPS, COMPOSITE_SUBCATEGORIES, ORTHOTROPIC_GROUPS, ORTHOTROPIC_PROPS, PROPS, type PropDef } from '../lib/props';
+import type { Category, Material, MaterialInput, MaterialModel, MaterialPropertyKey, OrthotropicProperties } from '../types';
+import { COMPOSITE_SUBCATEGORIES, ORTHOTROPIC_GROUPS, ORTHOTROPIC_PROPS, PROPS, type PropDef } from '../lib/props';
 import { isOrthotropic } from '../lib/materialProperties';
 import { OrthotropicInfo } from './OrthotropicProperties';
 import { Modal } from './Modal';
@@ -39,14 +39,13 @@ export function MaterialForm({ initial, existing, onSave, onClose, restrictSourc
   // Calculated properties (H) are not entered by hand.
   const mechanicalProps = orthotropic ? PROPS.filter(p => p.key === 'density') : PROPS.filter(p => !p.calculated);
   const activeProps: PropDef<MaterialPropertyKey>[] = orthotropic
-    ? [...mechanicalProps, ...ORTHOTROPIC_PROPS, ...COMPOSITE_STRENGTH_PROPS] : mechanicalProps;
+    ? [...mechanicalProps, ...ORTHOTROPIC_PROPS] : mechanicalProps;
   const [source, setSource] = useState(initial?.source ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [vals, setVals] = useState<Record<string, string>>(() =>
     Object.fromEntries([
       ...PROPS.map(p => [p.key, toText(initial?.[p.key] ?? null)]),
       ...ORTHOTROPIC_PROPS.map(p => [p.key, toText(initial?.orthotropic?.[p.key] ?? null)]),
-      ...COMPOSITE_STRENGTH_PROPS.map(p => [p.key, toText(initial?.compositeStrength?.[p.key] ?? null)]),
     ]),
   );
   const [submitted, setSubmitted] = useState(false);
@@ -103,11 +102,20 @@ export function MaterialForm({ initial, existing, onSave, onClose, restrictSourc
     }
     // Optional keys are omitted on untouched legacy records. Inactive data is retained
     // for reversible model switching, while all views use the explicit active model.
-    if (category === 'Composite' || initial?.materialModel !== undefined) input.materialModel = materialModel;
+    // compositeStrength is compatibility data and is never part of this input, so a
+    // stored object survives an edit on either material model.
+    // A legacy Composite with no stored model stays omitted while it remains
+    // Isotropic. A new Composite, a category change to Composite, an
+    // already explicit model, or a switch to Orthotropic writes materialModel.
+    const legacyIsotropicEquivalent = !!initial
+      && initial.category === 'Composite'
+      && initial.materialModel === undefined
+      && category === 'Composite'
+      && materialModel === 'Isotropic';
+    if (!legacyIsotropicEquivalent && (category === 'Composite' || initial?.materialModel !== undefined)) input.materialModel = materialModel;
     if (subCategory || initial?.subCategory !== undefined) input.subCategory = subCategory;
     if (orthotropic) {
       input.orthotropic = { ...initial?.orthotropic, ...Object.fromEntries(ORTHOTROPIC_PROPS.map(p => [p.key, vals[p.key].trim() === '' ? null : Number(vals[p.key])])) } as OrthotropicProperties;
-      input.compositeStrength = { ...initial?.compositeStrength, ...Object.fromEntries(COMPOSITE_STRENGTH_PROPS.map(p => [p.key, vals[p.key].trim() === '' ? null : Number(vals[p.key])])) } as CompositeStrength;
     }
     savingRef.current = true;
     setSaving(true);
@@ -185,8 +193,8 @@ export function MaterialForm({ initial, existing, onSave, onClose, restrictSourc
           <label>
             <span>Material Model</span>
             <select aria-label="Material Model" value={materialModel} onChange={e => setMaterialModel(e.target.value as MaterialModel)}>
+              <option value="Isotropic">Isotropic</option>
               <option value="Orthotropic">Orthotropic</option>
-              <option value="Isotropic">Isotropic Equivalent</option>
             </select>
           </label>
         </div>}
@@ -207,10 +215,6 @@ export function MaterialForm({ initial, existing, onSave, onClose, restrictSourc
                 {group.props.map(field)}
               </section>)}
             </div>
-          </fieldset>
-          <fieldset>
-            <legend>Strength / Failure Properties <small>(Optional)</small></legend>
-            <div className="form-grid composite-strength-fields">{COMPOSITE_STRENGTH_PROPS.map(field)}</div>
           </fieldset>
         </>}
 

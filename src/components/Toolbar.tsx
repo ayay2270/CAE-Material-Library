@@ -123,7 +123,7 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
               <i className="category-dot category-all" aria-hidden="true" />
               全部 <span>{p.materials.length}</span>
             </button>
-            {indexes.categories.map(({id:category,label,color}) => (
+            {indexes.categories.map(({id:category,label}) => (
               <button
                 key={category}
                 className={p.filters.category === category ? 'active' : ''}
@@ -131,7 +131,7 @@ export const Toolbar = forwardRef<HTMLInputElement, Props>(
                 onClick={() => p.onFilters({ ...p.filters, category })}
               >
                 <i
-                  className="category-dot" style={{background:color}}
+                  className="category-dot" style={{background:indexes.color(category)}}
                   aria-hidden="true"
                 />
                 {label} <span>{count(category)}</span>

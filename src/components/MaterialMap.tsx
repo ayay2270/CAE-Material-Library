@@ -1,16 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { Category, Material } from '../types';
+import type { Material } from '../types';
 import { isOrthotropic } from '../lib/materialProperties';
 import { useIndexes } from '../lib/indexes';
 import { ArrowLeftIcon, InfoIcon } from './icons';
-
-export const CATEGORY_COLOR: Record<Category, string> = {
-  Metal: '#2563eb',
-  Plastic: '#d97706',
-  Composite: '#7c3aed',
-  Elastomer: '#0d9488',
-  Others: '#64748b',
-};
 
 interface Props {
   materials: Material[];

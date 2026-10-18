@@ -95,7 +95,8 @@ const os = require('node:os');
       const label = key.startsWith('nu') ? key.replace('nu', 'ν') : key.toUpperCase();
       await form.getByLabel(new RegExp(`^${label}(?: |$)`)).fill(String(value));
     }
-    await form.getByLabel(/^Xt /).fill('300');
+    assert.equal(await form.getByText('Strength / Failure Properties', { exact: false }).count(), 0);
+    assert.equal(await form.getByLabel(/^Xt /).count(), 0);
     await form.getByLabel(/^E1 /).fill('0');
     await form.getByRole('button', { name: '新增', exact: true }).click();
     assert.equal(await form.getByText('必須大於 0。', { exact: true }).count(), 1);
@@ -118,12 +119,12 @@ const os = require('node:os');
     await persist();
     let record = (await stored()).materials.find(m => m.name === name);
     assert.deepEqual(record.orthotropic, constants);
-    assert.equal(record.compositeStrength.xt, 300);
-    assert.equal(record.compositeStrength.yc, null);
+    assert.equal(record.compositeStrength, undefined);
     assert.equal(record.density, 1.8e-9);
 
     await row(name).click();
     assert.equal(await drawer.getByText('Yield Stress', { exact: true }).count(), 0);
+    assert.equal(await drawer.getByText('Strength / Failure Properties', { exact: false }).count(), 0);
     assert.equal(await drawer.getByText('Orthotropic Elastic Properties', { exact: false }).count() >= 1, true);
     assert.ok((await drawer.textContent()).includes('8,595'));
     await screenshot('orthotropic-drawer-desktop.png');

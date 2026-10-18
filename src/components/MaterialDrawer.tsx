@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { Material, StressStrainData } from '../types';
 import { useIndexes } from '../lib/indexes';
 import { PROPS } from '../lib/props';
@@ -52,7 +52,7 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
       onClose={onClose}
       title={
         <span className="drawer-title">
-          {m.name} <span className="cat-tag">{indexes.label(m.category)}</span>
+          {m.name} <span className="cat-tag" style={{ '--cat': indexes.color(m.category) } as CSSProperties}>{indexes.label(m.category)}</span>
         </span>
       }
       footer={
@@ -79,7 +79,7 @@ export function MaterialDrawer({ material: m, units, onClose, onEdit, onDelete, 
       <div role="tabpanel">
         {tab === 'props' && (
           <>
-          {m.category === 'Composite' && <p className="muted">{m.subCategory ? `${m.subCategory} · ` : ''}{isOrthotropic(m) ? 'Orthotropic' : 'Isotropic Equivalent'}</p>}
+          {m.category === 'Composite' && <p className="muted">{m.subCategory ? `${m.subCategory} · ` : ''}{isOrthotropic(m) ? 'Orthotropic' : 'Isotropic'}</p>}
           {/* H is calculated in the Solver Plasticity section, so the stored H field is not listed here. */}
           <dl className="prop-grid prop-grid-open">
             {PROPS.filter(p => p.key !== 'etan' && (!isOrthotropic(m) || p.key === 'density')).map((p) => {

@@ -189,7 +189,7 @@ td.col-updatedAt { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .dialog-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--head-bg); }
 .dialog-body p { margin: 0 0 10px; line-height: 1.5; }
 .drawer-title { display: inline-flex; align-items: center; gap: 10px; }
-.cat-tag { font-size: 11px; font-weight: 600; color: var(--ink-2); background: #e9edf3; border-radius: 10px; padding: 1px 8px; }
+.cat-tag { font-size: 11px; font-weight: 600; color: color-mix(in srgb, var(--cat, #334155) 78%, #0f172a); background: color-mix(in srgb, var(--cat, #334155) 14%, #fff); border: 1px solid color-mix(in srgb, var(--cat, #334155) 38%, #d5deea); border-radius: 10px; padding: 1px 8px; }
 
 .io-block h3 {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; margin-bottom: 7px;
