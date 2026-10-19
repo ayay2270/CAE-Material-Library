@@ -27,6 +27,7 @@ test('opening and closing detail does not reset list filters, model filter, or s
     assert.equal(source.includes('setQuery'), false);
     assert.equal(source.includes('setLibraryMode'), false);
   }
+  assert.match(app, /const navigate = \(v: View\) => \{[\s\S]*if \(detailId\) closeDetail\(\)/);
   assert.match(app, /<MaterialTable[\s\S]*onOpen=\{openDetail\}/);
   assert.match(app, /<MaterialCards[\s\S]*onOpen=\{openDetail\}/);
   assert.match(app, /data-testid="material-detail"|<MaterialDetailPage/);

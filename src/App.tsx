@@ -253,7 +253,10 @@ export function App() {
     return () => window.removeEventListener('popstate', apply);
   }, []);
 
-  const navigate = (v: View) => setView(v);
+  const navigate = (v: View) => {
+    setView(v);
+    if (detailId) closeDetail();
+  };
   const showLocalEditing = () => setDialog('localEditing');
   const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
   const crudReadOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_MATERIAL_CRUD_DENIED : LOCAL_EDITING_HINT;
