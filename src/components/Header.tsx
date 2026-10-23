@@ -4,12 +4,14 @@ import landscapeBackground from '../assets/header-mountain-lake.jpg';
 import type { ReactNode } from 'react';
 import { LOCAL_EDITING_HINT } from '../lib/localEditing';
 export function Header({
+  onHome,
   onHelp,
   onAdd,
   editable,
   readOnlyTitle = LOCAL_EDITING_HINT,
   databaseStatus,
 }: {
+  onHome: () => void;
   onHelp: () => void;
   onAdd: () => void;
   editable: boolean;
@@ -22,7 +24,9 @@ export function Header({
         <img src={landscapeBackground} width={5600} height={630} alt="" />
       </div>
       <div className="brand">
-        <img className="logo-img" src={logo} alt="Lenovo" />
+        <button type="button" className="brand-home" onClick={onHome} aria-label="回到材料庫首頁" title="回到材料庫首頁">
+          <img className="logo-img" src={logo} alt="Lenovo" />
+        </button>
         <div>
           <span className="brand-title">CAE Material Library</span>
           <span className="brand-subtitle">CAE 材料資料庫</span>
