@@ -44,6 +44,10 @@ h1, h2, h3 { margin: 0; }
   background: var(--navy); color: #fff;
 }
 .brand { display: flex; align-items: center; gap: 12px; }
+.brand-home {
+  display: block; padding: 0; border: 0; background: transparent; border-radius: 3px; cursor: pointer;
+}
+.brand-home:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .logo-img { height: 30px; width: auto; display: block; border-radius: 2px; }
 .logo-mark {
   background: var(--red); color: #fff; font-weight: 800; font-size: 15px; letter-spacing: -0.2px;
