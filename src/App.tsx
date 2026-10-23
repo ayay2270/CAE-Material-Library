@@ -253,7 +253,18 @@ export function App() {
     return () => window.removeEventListener('popstate', apply);
   }, []);
 
-  const navigate = (v: View) => setView(v);
+  const clearDetailForNavigation = () => {
+    pushedDetail.current = false;
+    setDetailId(null);
+    const next = `${window.location.pathname}${searchWithMaterial(window.location.search, null)}${window.location.hash}`;
+    window.history.replaceState({}, '', next);
+  };
+  const navigate = (v: View) => {
+    if (detailId !== null || materialIdFromSearch(window.location.search) !== null) {
+      clearDetailForNavigation();
+    }
+    setView(v);
+  };
   const showLocalEditing = () => setDialog('localEditing');
   const showSupabaseReadOnly = () => setDialog('supabaseReadOnly');
   const crudReadOnlyTitle = materialState.dataSource === 'supabase' ? SUPABASE_MATERIAL_CRUD_DENIED : LOCAL_EDITING_HINT;
@@ -270,6 +281,7 @@ export function App() {
     <IndexContext.Provider value={indexes}>
     <div className="app">
       <Header
+        onHome={() => navigate('materials')}
         editable={materialCrudEnabled}
         readOnlyTitle={crudReadOnlyTitle}
         databaseStatus={<DatabaseStatus state={materialState} auth={auth} />}
