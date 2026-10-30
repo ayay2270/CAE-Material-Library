@@ -27,7 +27,7 @@ test('only App starts the single material auth watcher', async () => {
     const count = source.match(/startMaterialLibraryAuth\s*\(/g)?.length ?? 0;
     if (count > 0) calls.push(`${file}:${count}`);
   }
-  assert.deepEqual(calls.map(call => call.split('/').at(-1)).sort(), ['supabaseAuth.ts:1', 'useMaterialAuth.ts:1']);
+  assert.deepEqual(calls.map(call => call.split(/[\\/]/).at(-1)).sort(), ['supabaseAuth.ts:1', 'useMaterialAuth.ts:1']);
   const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
   const status = await readFile(new URL('../src/components/DatabaseStatus.tsx', import.meta.url), 'utf8');
   const hook = await readFile(new URL('../src/lib/useMaterialAuth.ts', import.meta.url), 'utf8');

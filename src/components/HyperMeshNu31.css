@@ -1,0 +1,42 @@
+.nu31-property {
+  margin-top: 12px;
+  color: var(--ink);
+}
+.nu31-trigger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.nu31-trigger:hover { background: var(--head-bg); }
+.nu31-trigger:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+.nu31-label { font-size: 13px; }
+.nu31-trigger strong { font: 600 16px var(--mono); font-variant-numeric: tabular-nums; }
+.nu31-hint { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-size: 12px; color: var(--ink-2); }
+.nu31-formula {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--head-bg);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.nu31-formula[hidden] { display: none; }
+.nu31-formula p { margin: 0 0 8px; }
+.nu31-formula p:last-child { margin-bottom: 0; }
+.nu31-equation { font-family: var(--mono); overflow-wrap: normal; }
+.nu31-equation span { display: inline-block; white-space: nowrap; }
+.nu31-formula a { color: var(--navy); text-decoration: underline; }
+.nu31-formula a:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
