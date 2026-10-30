@@ -7,6 +7,7 @@ import { formatDateLong, formatDay, formatValue, unitFor, type UnitPrefs } from 
 import { isStressStrainData } from '../lib/curveData';
 import { StressStrainSection } from './StressStrainSection';
 import { EtanPanel } from './EtanPanel';
+import { HyperMeshNu31 } from './HyperMeshNu31';
 import { EditIcon } from './icons';
 import { LOCAL_EDITING_HINT } from '../lib/localEditing';
 import type { MaterialPropertyKey } from '../types';
@@ -174,6 +175,7 @@ export function MaterialDetailPage({
                   <div className="detail-group-values">
                     {group.props.map((prop) => <PropertyCard key={prop.key} prop={prop} material={m} units={units} />)}
                   </div>
+                  {group.label === "Poisson's Ratio" && <HyperMeshNu31 key={m.id} material={m} />}
                 </section>
               ))}
             </div>

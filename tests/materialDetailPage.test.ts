@@ -152,6 +152,9 @@ test('orthotropic detail shows density and nine constants, not inactive isotropi
   assert.match(html, /ν12<\/span><strong>0\.28/);
   assert.match(html, /ν13<\/span><strong>0\.28/);
   assert.match(html, /ν23<\/span><strong>0\.40/);
+  assert.match(html, /NU31（HyperMesh）/);
+  assert.match(html, /<strong>0\.056<\/strong>/);
+  assert.match(html, /hidden="" role="region" aria-label="NU31 換算公式"/);
   assert.equal(html.includes('>v12<'), false);
   assert.equal(html.includes('>v13<'), false);
   assert.equal(html.includes('>v23<'), false);

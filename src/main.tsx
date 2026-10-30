@@ -6,6 +6,7 @@ import './workspace.css';
 import './material-options.css';
 import './database-status.css';
 import './orthotropic.css';
+import './components/HyperMeshNu31.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

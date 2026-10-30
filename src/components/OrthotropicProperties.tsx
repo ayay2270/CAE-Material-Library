@@ -4,6 +4,7 @@ import { ORTHOTROPIC_GROUPS, type PropDef } from '../lib/props';
 import { formatValue, unitFor, type UnitPrefs } from '../lib/format';
 import { materialValue } from '../lib/materialProperties';
 import { InfoIcon } from './icons';
+import { HyperMeshNu31 } from './HyperMeshNu31';
 import type { MaterialPropertyKey } from '../types';
 
 export function OrthotropicInfo() {
@@ -28,6 +29,7 @@ export function OrthotropicProperties({ material, units }: { material: Material;
       {ORTHOTROPIC_GROUPS.map(group => <section className="orthotropic-group" key={group.label} aria-label={group.label}>
         <h4>{group.label}</h4>
         <dl>{group.props.map(property)}</dl>
+        {group.label === "Poisson's Ratio" && <HyperMeshNu31 key={material.id} material={material} />}
       </section>)}
     </div>
   </div>;

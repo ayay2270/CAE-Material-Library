@@ -40,6 +40,7 @@ CAE 分析用的線上材料資料庫：瀏覽、搜尋、比較材料性質，�
 - Composite 類別可選擇 Material Model：**Isotropic** 或 **Orthotropic**。
 - Orthotropic 材料儲存 Density 與九個彈性常數：E1、E2、E3、G12、G13、G23、ν12、ν13、ν23。
 - 卡片顯示 ρ、E1、E2、E3、G12；詳細頁與比較顯示全部九個常數。
+- 詳細頁另顯示由原始 ν13、E1、E3 推算的 **NU31（HyperMesh）**，保留原始 ν13。滑鼠移入、鍵盤 focus 或點擊「計算公式」可展開換算與 OptiStruct MAT9OR 的預設解讀；Escape、點擊外部或移出焦點可收起。此值即時計算，不另存入 Supabase。
 - 線上範例：在網址後加上 `?example=fr4-orthotropic`，可開啟獨立的 FR4 Orthotropic 範例（只存在目前分頁，不會寫入正式資料）。
 
 ## 資料來源與權限
